@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Voice Translator</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+    }
+
+    .glass {
+      backdrop-filter: blur(10px);
+      background-color: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .neon-text {
+      text-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff, 0 0 20px #00f7ff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="min-h-screen flex flex-col items-center justify-center px-4 py-10">
+  <div class="w-full max-w-3xl glass rounded-2xl p-8 space-y-6 shadow-2xl">
+
+    <!-- Header -->
+    <header class="text-center">
+      <div class="flex justify-center mb-2">
+        <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_p8bfn5to.json" background="transparent" speed="1" style="width: 60px; height: 60px;" loop autoplay></lottie-player>
+      </div>
+      <h1 class="text-4xl font-bold neon-text">🤖 AI Voice Translator</h1>
+      <p class="text-md text-cyan-200 mt-2">Speak, Translate & Hear AI in Action</p>
+    </header>
+
+    <!-- Input Section -->
+    <section class="flex flex-col items-center space-y-4"></section>
+      <label class="block text-lg font-semibold">Speech Language:</label>
+      <select id="speechLang" class="text-black px-2 py-1 rounded w-full"></select>
+
+      <textarea id="inputText" rows="3" class="w-full p-2 rounded text-black" placeholder="Type or speak here..."></textarea>
+
+      <button onclick="startRecognition()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center space-x-2 text-sm md:text-base">
+        <lottie-player src="https://assets4.lottiefiles.com/packages/lf20_jrpzvtqz.json" background="transparent" speed="1" style="width: 30px; height: 30px;" loop autoplay></lottie-player>
+        <span>Start Speech Recognition</span>
+      </button>
+
+      <label class="flex items-center space-x-3">
+        <span class="text-2xl">🎧</span>
+        <input type="checkbox" id="playAudio" checked class="w-5 h-5" />
+        <span class="text-xl font-semibold">Play Audio</span>
+      </label>
+
+    <!-- Single Language Translation -->
+    <section class="space-y-4">
+      <label class="block text-lg font-semibold">Translate to:</label>
+      <select id="language" class="text-black px-2 py-1 rounded w-full"></select>
+
+      <button onclick="translateText()" class="px-4 py-2 w-fit mx-auto bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center space-x-2 text-sm md:text-base">
+        <lottie-player src="https://assets1.lottiefiles.com/packages/lf20_hdy0htc3.json" background="transparent" speed="1" style="width: 30px; height: 30px;" loop autoplay></lottie-player>
+        <span>Translate</span>
+      </button>
+    </section>
+
+    <!-- Multi-Language Translation -->
+    <section class="space-y-4">
+      <label class="block text-lg font-semibold">Translate to (Multiple):</label>
+      <select id="multiLangSelect" multiple class="w-full p-2 rounded bg-gray-800 text-white"></select>
+
+      <button onclick="translateSelected()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center space-x-2 text-sm md:text-base">
+        <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_3j1q6v.json" background="transparent" speed="1" style="width: 30px; height: 30px;" loop autoplay></lottie-player>
+        <span>Translate Selected</span> 
+      </button>
+
+      <div id="multi-result" class="space-y-4 text-white"></div>
+    </section>
+
+    <!-- Feedback -->
+    <div id="feedback" class="text-center text-yellow-300 text-sm"></div>
+
+    <!-- Audio Player -->
+    <audio id="audioPlayback" controls class="w-full mt-4 hidden"></audio>
+    <div class="w-full flex justify-center">
+  <a id="downloadLink" class="hidden text-blue-300 underline mt-2" download>⬇️ Download MP3</a>
+</div>
+
+    <!-- History Button -->
+    <a href="/history" class="px-4 py-2 w-fit mx-auto bg-purple-600 hover:bg-purple-700 text-white rounded-xl flex items-center justify-center space-x-2 text-sm md:text-base">
+      <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_3j1q6v.json" background="transparent" speed="1" style="width: 30px; height: 30px;" loop autoplay></lottie-player>
+      <span>View Translation History</span>
+    </a>
+  </div>
+</div>
+
+<script>
+  const languages = {
+    'en': 'English', 'hi': 'Hindi', 'mr': 'Marathi', 'kn': 'Kannada',
+    'gu': 'Gujarati', 'ml': 'Malayalam', 'de': 'German', 'fr': 'French',
+    'es': 'Spanish', 'ja': 'Japanese'
+  };
+
+  const speechLangSelect = document.getElementById("speechLang");
+  const translateLangSelect = document.getElementById("language");
+  const multiLangSelect = document.getElementById("multiLangSelect");
+  const feedback = document.getElementById("feedback");
+  const audio = document.getElementById("audioPlayback");
+  const downloadLink = document.getElementById("downloadLink");
+
+  // Populate all selects
+  for (const [code, name] of Object.entries(languages)) {
+    speechLangSelect.add(new Option(`${name} [${code}]`, code));
+    translateLangSelect.add(new Option(`${name} [${code}]`, code));
+    multiLangSelect.add(new Option(`${name} [${code}]`, code));
+  }
+
+  new TomSelect('#speechLang');
+  new TomSelect('#language');
+  new TomSelect('#multiLangSelect');
+
+  function startRecognition() {
+    if (!("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+      return alert("Speech recognition not supported.");
+    }
+
+    const lang = speechLangSelect.value;
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = lang;
+
+    feedback.textContent = "🎙️ Listening...";
+    recognition.onresult = (e) => {
+      document.getElementById("inputText").value = e.results[0][0].transcript;
+      feedback.textContent = "✅ Speech recognized!";
+    };
+    recognition.onerror = () => feedback.textContent = "⚠️ Recognition error.";
+    recognition.onend = () => setTimeout(() => feedback.textContent = '', 2000);
+    recognition.start();
+  }
+
+  async function translateText() {
+    const text = document.getElementById("inputText").value.trim();
+    const language = translateLangSelect.value;
+    const playAudio = document.getElementById("playAudio").checked;
+
+    if (!text) {
+      feedback.textContent = "⚠️ Please enter or speak text.";
+      return;
+    }
+
+    feedback.textContent = "⏳ Translating...";
+    audio.classList.add("hidden");
+    downloadLink.classList.add("hidden");
+
+    try {
+      const res = await fetch("/translate", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `text=${encodeURIComponent(text)}&language=${language}&playAudio=${playAudio}`
+      });
+
+      const data = await res.json();
+      if (data.translated.startsWith("Error:")) {
+        feedback.textContent = data.translated;
+      } else {
+        feedback.textContent = "✅ Translation complete!";
+        audio.src = data.audio_path ? data.audio_path + `?t=${Date.now()}` : '';
+        if (data.audio_path && playAudio) {
+          audio.classList.remove("hidden");
+          audio.onloadeddata = () => audio.play().catch(console.warn);
+          downloadLink.href = audio.src;
+          downloadLink.classList.remove("hidden");
+        }
+      }
+    } catch (err) {
+      feedback.textContent = "❌ Translation failed.";
+    }
+  }
+
+  async function translateSelected() {
+    const text = document.getElementById("inputText").value.trim();
+    const selected = Array.from(multiLangSelect.selectedOptions).map(opt => opt.value);
+    const playAudio = document.getElementById("playAudio").checked;
+    const output = document.getElementById("multi-result");
+
+    if (!text || selected.length === 0) {
+      feedback.textContent = "⚠️ Enter text and select languages.";
+      return;
+    }
+
+    output.innerHTML = "";
+    feedback.textContent = "🌐 Translating multiple languages...";
+
+    try {
+      const res = await fetch('/translate-multi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, languages: selected, playAudio })
+      });
+
+      const data = await res.json();
+      if (data.error) {
+        feedback.textContent = "❌ " + data.error;
+        return;
+      }
+
+      data.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "bg-white bg-opacity-10 rounded-lg p-4 border border-white border-opacity-20";
+        const audioSrc = item.audio_path ? item.audio_path + `?t=${Date.now()}` : null;
+
+        div.innerHTML = `
+          <p class="font-semibold text-lg">➡️ ${languages[item.language] || item.language}</p>
+          <p><strong>Translated:</strong> ${item.translated_text}</p>
+          ${audioSrc ? `<audio controls class="mt-2 w-full"><source src="${audioSrc}" type="audio/mpeg"></audio>` : ''}
+        `;
+        output.appendChild(div);
+      });
+
+      feedback.textContent = "✅ Multi-language translation complete!";
+    } catch (err) {
+      feedback.textContent = "❌ Server error during multi-translation.";
+    }
+  }
+</script>
+
+</body>
+</html>
