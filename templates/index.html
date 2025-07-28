@@ -9,7 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
   <style>
     body {
@@ -37,39 +36,34 @@
 
     <!-- Header -->
     <header class="text-center">
-      <div class="flex justify-center mb-2">
-        <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_p8bfn5to.json" background="transparent" speed="1" style="width: 60px; height: 60px;" loop autoplay></lottie-player>
-      </div>
       <h1 class="text-4xl font-bold neon-text">🤖 AI Voice Translator</h1>
       <p class="text-md text-cyan-200 mt-2">Speak, Translate & Hear AI in Action</p>
     </header>
 
     <!-- Input Section -->
-    <section class="flex flex-col items-center space-y-4"></section>
+    <section class="flex flex-col items-center space-y-4">
       <label class="block text-lg font-semibold">Speech Language:</label>
       <select id="speechLang" class="text-black px-2 py-1 rounded w-full"></select>
 
       <textarea id="inputText" rows="3" class="w-full p-2 rounded text-black" placeholder="Type or speak here..."></textarea>
 
-      <button onclick="startRecognition()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center space-x-2 text-sm md:text-base">
-        <lottie-player src="https://assets4.lottiefiles.com/packages/lf20_jrpzvtqz.json" background="transparent" speed="1" style="width: 30px; height: 30px;" loop autoplay></lottie-player>
-        <span>Start Speech Recognition</span>
+      <button onclick="startRecognition()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl">
+        🎤 Start Speech Recognition
       </button>
 
       <label class="flex items-center space-x-3">
-        <span class="text-2xl">🎧</span>
         <input type="checkbox" id="playAudio" checked class="w-5 h-5" />
-        <span class="text-xl font-semibold">Play Audio</span>
+        <span class="text-xl font-semibold">🎧 Play Audio</span>
       </label>
+    </section>
 
     <!-- Single Language Translation -->
     <section class="space-y-4">
       <label class="block text-lg font-semibold">Translate to:</label>
       <select id="language" class="text-black px-2 py-1 rounded w-full"></select>
 
-      <button onclick="translateText()" class="px-4 py-2 w-fit mx-auto bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center space-x-2 text-sm md:text-base">
-        <lottie-player src="https://assets1.lottiefiles.com/packages/lf20_hdy0htc3.json" background="transparent" speed="1" style="width: 30px; height: 30px;" loop autoplay></lottie-player>
-        <span>Translate</span>
+      <button onclick="translateText()" class="px-4 py-2 w-fit mx-auto bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+        🌍 Translate
       </button>
     </section>
 
@@ -78,9 +72,8 @@
       <label class="block text-lg font-semibold">Translate to (Multiple):</label>
       <select id="multiLangSelect" multiple class="w-full p-2 rounded bg-gray-800 text-white"></select>
 
-      <button onclick="translateSelected()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center space-x-2 text-sm md:text-base">
-        <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_3j1q6v.json" background="transparent" speed="1" style="width: 30px; height: 30px;" loop autoplay></lottie-player>
-        <span>Translate Selected</span> 
+      <button onclick="translateSelected()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl">
+        🌐 Translate Selected
       </button>
 
       <div id="multi-result" class="space-y-4 text-white"></div>
@@ -92,13 +85,12 @@
     <!-- Audio Player -->
     <audio id="audioPlayback" controls class="w-full mt-4 hidden"></audio>
     <div class="w-full flex justify-center">
-  <a id="downloadLink" class="hidden text-blue-300 underline mt-2" download>⬇️ Download MP3</a>
-</div>
+      <a id="downloadLink" class="hidden text-blue-300 underline mt-2" download>⬇️ Download MP3</a>
+    </div>
 
     <!-- History Button -->
-    <a href="/history" class="px-4 py-2 w-fit mx-auto bg-purple-600 hover:bg-purple-700 text-white rounded-xl flex items-center justify-center space-x-2 text-sm md:text-base">
-      <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_3j1q6v.json" background="transparent" speed="1" style="width: 30px; height: 30px;" loop autoplay></lottie-player>
-      <span>View Translation History</span>
+    <a href="/history" class="px-4 py-2 w-fit mx-auto bg-purple-600 hover:bg-purple-700 text-white rounded-xl">
+      🕓 View Translation History
     </a>
   </div>
 </div>
@@ -117,7 +109,6 @@
   const audio = document.getElementById("audioPlayback");
   const downloadLink = document.getElementById("downloadLink");
 
-  // Populate all selects
   for (const [code, name] of Object.entries(languages)) {
     speechLangSelect.add(new Option(`${name} [${code}]`, code));
     translateLangSelect.add(new Option(`${name} [${code}]`, code));
@@ -168,21 +159,32 @@
         body: `text=${encodeURIComponent(text)}&language=${language}&playAudio=${playAudio}`
       });
 
+      if (!res.ok) {
+        throw new Error(`Server responded with status ${res.status}`);
+      }
+
       const data = await res.json();
-      if (data.translated.startsWith("Error:")) {
+      if (data.translated && data.translated.startsWith("Error:")) {
         feedback.textContent = data.translated;
       } else {
-        feedback.textContent = "✅ Translation complete!";
-        audio.src = data.audio_path ? data.audio_path + `?t=${Date.now()}` : '';
+        feedback.innerHTML = `
+  ✅ Translation complete!<br>
+  <strong>Original:</strong> ${text}<br>
+  <strong>Translated:</strong> ${data.translated}
+`;
+
         if (data.audio_path && playAudio) {
+          const src = data.audio_path + `?t=${Date.now()}`;
+          audio.src = src;
           audio.classList.remove("hidden");
           audio.onloadeddata = () => audio.play().catch(console.warn);
-          downloadLink.href = audio.src;
+          downloadLink.href = src;
           downloadLink.classList.remove("hidden");
         }
       }
     } catch (err) {
-      feedback.textContent = "❌ Translation failed.";
+      console.error(err);
+      feedback.textContent = "❌ Translation failed. " + err.message;
     }
   }
 
@@ -207,13 +209,17 @@
         body: JSON.stringify({ text, languages: selected, playAudio })
       });
 
+      if (!res.ok) {
+        throw new Error(`Server responded with status ${res.status}`);
+      }
+
       const data = await res.json();
       if (data.error) {
         feedback.textContent = "❌ " + data.error;
         return;
       }
 
-      data.forEach(item => {
+      data.translations.forEach(item => {
         const div = document.createElement("div");
         div.className = "bg-white bg-opacity-10 rounded-lg p-4 border border-white border-opacity-20";
         const audioSrc = item.audio_path ? item.audio_path + `?t=${Date.now()}` : null;
@@ -228,6 +234,7 @@
 
       feedback.textContent = "✅ Multi-language translation complete!";
     } catch (err) {
+      console.error(err);
       feedback.textContent = "❌ Server error during multi-translation.";
     }
   }
@@ -235,3 +242,19 @@
 
 </body>
 </html>
+    mouse.x = event.clientX;
+    mouse.y = event.clientY;
+  });
+
+  const particles = [];
+  const maxParticles = 100;
+
+  function createParticle() {
+    return {
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      radius: Math.random() * 3 + 1,
+      color: 'rgba(0, 247, 255, 0.7)',
+      speedX: (Math.random() - 0.5) * 2,
+      speedY: (Math.random() - 0.5) * 2,
+    };
