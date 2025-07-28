@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Voice Translator</title>
 
+  <!-- TailwindCSS and TomSelect -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
@@ -95,6 +96,7 @@
   </div>
 </div>
 
+<!-- Main Functional JS -->
 <script>
   const languages = {
     'en': 'English', 'hi': 'Hindi', 'mr': 'Marathi', 'kn': 'Kannada',
@@ -159,19 +161,15 @@
         body: `text=${encodeURIComponent(text)}&language=${language}&playAudio=${playAudio}`
       });
 
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
-      }
-
       const data = await res.json();
       if (data.translated && data.translated.startsWith("Error:")) {
         feedback.textContent = data.translated;
       } else {
         feedback.innerHTML = `
-  ✅ Translation complete!<br>
-  <strong>Original:</strong> ${text}<br>
-  <strong>Translated:</strong> ${data.translated}
-`;
+          ✅ Translation complete!<br>
+          <strong>Original:</strong> ${text}<br>
+          <strong>Translated:</strong> ${data.translated}
+        `;
 
         if (data.audio_path && playAudio) {
           const src = data.audio_path + `?t=${Date.now()}`;
@@ -209,10 +207,6 @@
         body: JSON.stringify({ text, languages: selected, playAudio })
       });
 
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
-      }
-
       const data = await res.json();
       if (data.error) {
         feedback.textContent = "❌ " + data.error;
@@ -240,8 +234,11 @@
   }
 </script>
 
-</body>
-</html>
+<!-- 🌌 Particle Background Animation -->
+<script>
+  // Track mouse
+  const mouse = { x: 0, y: 0 };
+  window.addEventListener("mousemove", function (event) {
     mouse.x = event.clientX;
     mouse.y = event.clientY;
   });
@@ -251,10 +248,56 @@
 
   function createParticle() {
     return {
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
       radius: Math.random() * 3 + 1,
       color: 'rgba(0, 247, 255, 0.7)',
       speedX: (Math.random() - 0.5) * 2,
       speedY: (Math.random() - 0.5) * 2,
     };
+  }
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.style.position = "fixed";
+  canvas.style.top = 0;
+  canvas.style.left = 0;
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  canvas.style.zIndex = "-1";
+  document.body.appendChild(canvas);
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  for (let i = 0; i < maxParticles; i++) {
+    particles.push(createParticle());
+  }
+
+  function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+
+      if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(animateParticles);
+  }
+
+  animateParticles();
+</script>
+
+</body>
+</html>
