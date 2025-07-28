@@ -5,4 +5,5 @@ Commands to push code in Git-Hub
 git init
 git add .
 git commit -m " "
+git pull --rebase origin main
 git push origin main
