@@ -106,6 +106,8 @@ def image_gen():
 
 @app.route("/")
 def home_redirect():
+    if session.get("email"):
+        return redirect(url_for("index"))
     return redirect(url_for("register_page"))
 
 
@@ -276,6 +278,8 @@ def translate_multi():
 
 @app.route("/register_page")
 def register_page():
+    if session.get("email"):
+        return redirect(url_for("index"))
     return render_template("signup.html")
 
 
@@ -305,6 +309,8 @@ def get_audio(filename):
 
 @app.route("/login")
 def login():
+    if session.get("email"):
+        return redirect(url_for("index"))
     return render_template("login.html")
 
 
@@ -574,5 +580,5 @@ def buy_plan():
     )
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 3000)))
+'''if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 3000)))'''
