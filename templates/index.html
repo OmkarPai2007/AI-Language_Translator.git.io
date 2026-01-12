@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Language Translator</title>
+
+  <!-- TailwindCSS and TomSelect -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+    }
+
+    .glass {
+      backdrop-filter: blur(10px);
+      background-color: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .neon-text {
+      text-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff, 0 0 20px #00f7ff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="min-h-screen flex flex-col items-center justify-center px-4 py-10">
+  <div class="w-full max-w-3xl glass rounded-2xl p-8 space-y-6 shadow-2xl">
+
+    <div class="w-full px-4 py-2 text-sm text-right text-white bg-black bg-opacity-30">
+      👤 Logged in as: <strong>{{ full_name }}</strong> ({{ email }})
+      <a href="/logout" class="ml-4 text-red-300 underline hover:text-red-100">Logout</a>
+    </div>
+
+    <!-- Header -->
+    <header class="text-center">
+      <h1 class="text-4xl font-bold neon-text">🤖 AI-Language Translator</h1>
+      <p class="text-md text-cyan-200 mt-2">Speak, Translate & Hear AI in Action</p>
+    </header>
+
+    <!-- Input Section -->
+    <section class="flex flex-col items-center space-y-4">
+      <label class="block text-lg font-semibold">Speech Language:</label>
+      <select id="speechLang" class="text-black px-2 py-1 rounded w-full"></select>
+
+      <textarea id="inputText" rows="3" class="w-full p-2 rounded text-black" placeholder="Type or speak here..."></textarea>
+
+      <button onclick="startRecognition()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl">
+        🎤 Start Speech Recognition
+      </button>
+
+      <label class="flex items-center space-x-3">
+        <input type="checkbox" id="playAudio" checked class="w-5 h-5" />
+        <span class="text-xl font-semibold">🎧 Play Audio</span>
+      </label>
+    </section>
+
+    <!-- Single Language Translation -->
+    <section class="space-y-4">
+      <label class="block text-lg font-semibold">Translate to:</label>
+      <select id="language" class="text-black px-2 py-1 rounded w-full"></select>
+
+      <button onclick="translateText()" class="px-4 py-2 w-fit mx-auto bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+        🌍 Translate
+      </button>
+    </section>
+
+    <!-- Multi-Language Translation -->
+    <section class="space-y-4">
+      <label class="block text-lg font-semibold">Translate to (Multiple):</label>
+      <select id="multiLangSelect" multiple class="w-full p-2 rounded bg-gray-800 text-white"></select>
+
+      <button onclick="translateSelected()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl">
+        🌐 Translate Selected
+      </button>
+
+      <div id="multi-result" class="space-y-4 text-white"></div>
+    </section>
+
+    <!-- Feedback -->
+    <div id="feedback" class="text-center text-yellow-300 text-sm min-h-[20px]"></div>
+
+    <!-- Main Audio Player (now used for both single and multi) -->
+    <audio id="audioPlayback" controls class="w-full mt-4 hidden"></audio>
+    <div class="w-full flex justify-center">
+      <a id="downloadLink" class="hidden text-blue-300 underline mt-2" download>⬇️ Download MP3</a>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="flex flex-wrap justify-center gap-4 mt-4">
+        <a href="/history" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">
+          🕓 View History
+        </a>
+        <!--<a href="/image-gen" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">
+          🖼️ Text to Image
+        </a>
+        <a href="/image-analyze" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">
+          👁️ Image to Text
+        </a>
+        <a href="/chatbot" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">
+          💬 Start Chatbot
+        </a>-->
+    </div>
+    
+  </div>
+</div>
+
+<!-- Purchase Limit Modal -->
+<div id="limitModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-60 z-50 flex justify-center items-center" style="display:none;">
+  <div class="bg-white p-8 rounded-2xl max-w-lg w-11/12 text-center shadow-lg relative">
+    <h2 class="text-2xl font-bold text-black mb-4">🚫 Free Limit Reached</h2>
+    <p class="text-gray-700 mb-6">Choose a plan to unlock more multi-language translations!</p>
+
+    <div class="flex flex-wrap justify-center gap-4">
+      <div class="bg-gray-100 p-4 rounded-lg border-2 border-blue-500 flex-grow">
+        <h3 class="text-blue-600 text-lg font-semibold">🔓 5 Extra Translations</h3>
+        <p class="text-sm text-gray-500">₹49</p>
+        <button class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-full" onclick="buyPlan(5)">Buy Now</button>
+      </div>
+      <div class="bg-gray-100 p-4 rounded-lg border-2 border-green-500 flex-grow">
+        <h3 class="text-green-600 text-lg font-semibold">✨ 10 Extra Translations</h3>
+        <p class="text-sm text-gray-500">₹79</p>
+        <button class="mt-2 px-4 py-2 bg-green-600 text-white rounded-full" onclick="buyPlan(10)">Buy Now</button>
+      </div>
+      <div class="bg-gray-100 p-4 rounded-lg border-2 border-orange-500 flex-grow">
+        <h3 class="text-orange-600 text-lg font-semibold">🚀 15 Extra Translations</h3>
+        <p class="text-sm text-gray-500">₹99</p>
+        <button class="mt-2 px-4 py-2 bg-orange-500 text-white rounded-full" onclick="buyPlan(15)">Buy Now</button>
+      </div>
+    </div>
+
+    <button onclick="closeModal()" class="mt-6 text-sm underline text-gray-600">Maybe later</button>
+  </div>
+</div>
+
+
+<!-- Main Functional JS -->
+<script>
+  const languages = {
+    'en': 'English', 'hi': 'Hindi', 'mr': 'Marathi', 'kn': 'Kannada',
+    'gu': 'Gujarati', 'ml': 'Malayalam', 'de': 'German', 'fr': 'French',
+    'es': 'Spanish', 'ja': 'Japanese'
+  };
+
+  const speechLangSelect = document.getElementById("speechLang");
+  const translateLangSelect = document.getElementById("language");
+  const multiLangSelect = document.getElementById("multiLangSelect");
+  const feedback = document.getElementById("feedback");
+  const audioPlayer = document.getElementById("audioPlayback");
+  const downloadLink = document.getElementById("downloadLink");
+
+  for (const [code, name] of Object.entries(languages)) {
+    speechLangSelect.add(new Option(`${name} [${code}]`, code));
+    translateLangSelect.add(new Option(`${name} [${code}]`, code));
+    multiLangSelect.add(new Option(`${name} [${code}]`, code));
+  }
+
+  new TomSelect('#speechLang');
+  new TomSelect('#language');
+  new TomSelect('#multiLangSelect');
+
+  function startRecognition() {
+    if (!("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+      feedback.textContent = "Speech recognition not supported in this browser.";
+      return;
+    }
+
+    const lang = speechLangSelect.value;
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = lang;
+
+    feedback.textContent = "🎙️ Listening...";
+    recognition.onresult = (e) => {
+      document.getElementById("inputText").value = e.results[0][0].transcript;
+      feedback.textContent = "✅ Speech recognized!";
+    };
+    recognition.onerror = () => feedback.textContent = "⚠️ Recognition error.";
+    recognition.onend = () => setTimeout(() => {
+        if(feedback.textContent.includes("Listening") || feedback.textContent.includes("recognized")) {
+            feedback.textContent = '';
+        }
+    }, 2000);
+    recognition.start();
+  }
+
+  async function translateText() {
+    const text = document.getElementById("inputText").value.trim();
+    const language = translateLangSelect.value;
+    const playAudio = document.getElementById("playAudio").checked;
+
+    if (!text) {
+      feedback.textContent = "⚠️ Please enter or speak text.";
+      return;
+    }
+
+    feedback.textContent = "⏳ Translating...";
+    audioPlayer.classList.add("hidden");
+    downloadLink.classList.add("hidden");
+    document.getElementById("multi-result").innerHTML = "";
+
+
+    try {
+      const res = await fetch("/translate", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `text=${encodeURIComponent(text)}&language=${language}&playAudio=${playAudio}`
+      });
+
+      const data = await res.json();
+      if (data.translated && data.translated.startsWith("Error:")) {
+        feedback.textContent = data.translated;
+      } else {
+        feedback.innerHTML = `✅ Translation complete!`;
+        document.getElementById("multi-result").innerHTML = `
+            <div class="bg-white bg-opacity-10 rounded-lg p-4 border border-white border-opacity-20">
+                <p><strong>Original:</strong> ${text}</p>
+                <p><strong>Translated:</strong> ${data.translated}</p>
+            </div>
+        `;
+
+        if (data.audio_path && playAudio) {
+          const src = data.audio_path + `?t=${Date.now()}`;
+          audioPlayer.src = src;
+          audioPlayer.classList.remove("hidden");
+          audioPlayer.onloadeddata = () => audioPlayer.play().catch(console.warn);
+          downloadLink.href = src;
+          downloadLink.classList.remove("hidden");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      feedback.textContent = "❌ Translation failed. " + err.message;
+    }
+  }
+
+  async function translateSelected() {
+    const text = document.getElementById("inputText").value.trim();
+    const selected = Array.from(multiLangSelect.selectedOptions).map(opt => opt.value);
+    const playAudio = document.getElementById("playAudio").checked;
+    const output = document.getElementById("multi-result");
+
+    if (!text || selected.length === 0) {
+      feedback.textContent = "⚠️ Enter text and select at least one language.";
+      return;
+    }
+
+    output.innerHTML = "";
+    feedback.textContent = "🌐 Translating multiple languages...";
+    audioPlayer.classList.add("hidden");
+    downloadLink.classList.add("hidden");
+
+    try {
+      const res = await fetch('/translate-multi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, languages: selected, playAudio })
+      });
+
+      const data = await res.json();
+
+      if (data.limit_reached) {
+        document.getElementById('limitModal').style.display = 'flex';
+        feedback.textContent = '🚫 Limit reached. Please purchase a plan.';
+        return;
+      }
+
+      if (data.error) {
+        feedback.textContent = "❌ " + data.error;
+        return;
+      }
+      
+      const audioQueue = [];
+      data.translations.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "bg-white bg-opacity-10 rounded-lg p-4 border border-white border-opacity-20";
+        const audioSrc = item.audio_path ? item.audio_path + `?t=${Date.now()}` : null;
+
+        div.innerHTML = `
+          <p class="font-semibold text-lg">➡️ ${languages[item.language] || item.language}</p>
+          <p><strong>Translated:</strong> ${item.translated_text}</p>
+        `;
+        
+        if(audioSrc) {
+            const individualPlayer = document.createElement('audio');
+            individualPlayer.controls = true;
+            individualPlayer.className = 'mt-2 w-full';
+            individualPlayer.src = audioSrc;
+            div.appendChild(individualPlayer);
+            
+            if(playAudio){
+                audioQueue.push(audioSrc);
+            }
+        }
+        output.appendChild(div);
+      });
+
+      if(playAudio && audioQueue.length > 0){
+          playAudioSequentially(audioQueue);
+      }
+
+      feedback.textContent = "✅ Multi-language translation complete!";
+    } catch (err) {
+      console.error(err);
+      feedback.textContent = "❌ Server error during multi-translation.";
+    }
+  }
+
+  function playAudioSequentially(queue) {
+      if (queue.length === 0) {
+          audioPlayer.classList.add('hidden');
+          downloadLink.classList.add('hidden');
+          return;
+      }
+      const currentSrc = queue.shift();
+      audioPlayer.src = currentSrc;
+      downloadLink.href = currentSrc;
+      audioPlayer.classList.remove('hidden');
+      downloadLink.classList.remove('hidden');
+      
+      audioPlayer.play().catch(console.warn);
+
+      audioPlayer.onended = () => {
+          playAudioSequentially(queue);
+      };
+  }
+
+
+  function closeModal() {
+    document.getElementById('limitModal').style.display = 'none';
+  }
+
+  function buyPlan(extraMessages) {
+    feedback.textContent = 'Processing your purchase...';
+    fetch("/buy-plan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messages: extraMessages }),
+    })
+    .then((res) => {
+      if (!res.ok) {
+          return res.json().then(err => { throw new Error(err.message || "Failed to buy plan") });
+      }
+      return res.json();
+    })
+    .then((data) => {
+      feedback.textContent = `✅ ${data.message}`;
+      document.getElementById("limitModal").style.display = "none";
+
+      if (data.receipt_url) {
+        window.open(data.receipt_url, "_blank");
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      feedback.textContent = `❌ Error: ${error.message}`;
+    });
+  }
+</script>
+
+<!-- 🌌 Particle Background Animation -->
+<script>
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.style.position = "fixed";
+  canvas.style.top = 0;
+  canvas.style.left = 0;
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  canvas.style.zIndex = "-1";
+  document.body.insertBefore(canvas, document.body.firstChild);
+
+  const particles = [];
+  const maxParticles = 100;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  function createParticle() {
+    return {
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      radius: Math.random() * 2 + 1,
+      color: 'rgba(0, 247, 255, 0.7)',
+      speedX: (Math.random() - 0.5) * 1.5,
+      speedY: (Math.random() - 0.5) * 1.5,
+    };
+  }
+
+  for (let i = 0; i < maxParticles; i++) {
+    particles.push(createParticle());
+  }
+
+  function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+
+      if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(animateParticles);
+  }
+
+  animateParticles();
+</script>
+
+</body>
+</html>

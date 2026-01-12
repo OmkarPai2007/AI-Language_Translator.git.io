@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="/static/style-signup.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+
+  <body class="auth-body">
+    <div class="auth-container">
+      <div class="auth-left">
+        <h2 class="login-heading">Sign Up</h2>
+        <hr />
+        <form id="signup-form">
+          <div class="input-group required-wrapper">
+            <i class="fas fa-user"></i>
+            <div class="input-container">
+              <label class="input-label">Full Name</label>
+              <input type="text" name="fullName" placeholder="E.g. Chrislyn Jhon Dhrum" required />
+              <span class="required-asterisk">*</span>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="input-group required-wrapper">
+            <i class="fas fa-envelope"></i>
+            <div class="input-container">
+              <label class="input-label">Email</label>
+              <input type="email" name="email" placeholder="E.g.chrislyndhrum@gmail.com " required />
+              <span class="required-asterisk">*</span>
+            </div>
+          </div>
+
+          <div class="input-group required-wrapper">
+            <i class="fas fa-users"></i>
+            <div class="input-container">
+              <label class="input-label">Enter Age</label>
+              <input type="number" name="age" placeholder="Age " required />
+              <span class="required-asterisk">*</span>
+            </div>
+          </div>
+          <!--    
+       
+        <div class="input-group required-wrapper">
+          <i class="fas fa-phone"></i>
+          <div class="input-container">
+            <label class="input-label">Phone Number</label>
+            <input type="tel" name="phoneNumber" placeholder="Phone Number" required />
+            <span class="required-asterisk">*</span>
+          </div>
+        </div> 
+         -->
+
+          <!-- Password -->
+          <div class="input-group required-wrapper">
+            <i class="fas fa-lock"></i>
+            <div class="input-container">
+              <label class="input-label">Password</label>
+              <input type="password" name="password" placeholder="Password" required />
+              <span class="required-asterisk">*</span>
+            </div>
+          </div>
+
+          <button type="submit" class="auth-btn">Create Account</button>
+          <p class="switch-link">
+            Already have an account? <a href="/login">Login</a>
+          </p>
+        </form>
+      </div>
+      <div class="auth-right">
+        <div class="shapes"></div>
+      </div>
+    </div>
+
+    <script>
+      function openCountryModal() {
+        document.getElementById('countryModal').style.display = 'flex'
+        document.getElementById('countrySearch').value = ''
+        filterCountry()
+      }
+      function closeCountryModal() {
+        document.getElementById('countryModal').style.display = 'none'
+      }
+      function selectCountry(name) {
+        document.getElementById('countryInput').value = name
+        closeCountryModal()
+      }
+      function filterCountry() {
+        const input = document.getElementById('countrySearch').value.toLowerCase()
+        const items = document.getElementById('countryList').getElementsByTagName('li')
+        for (let i = 0; i < items.length; i++) {
+          const text = items[i].textContent.toLowerCase()
+          items[i].style.display = text.includes(input) ? 'block' : 'none'
+        }
+      }
+      
+      function openCityModal() {
+        document.getElementById('cityModal').style.display = 'flex'
+        document.getElementById('citySearch').value = ''
+        filterCity()
+      }
+      function closeCityModal() {
+        document.getElementById('cityModal').style.display = 'none'
+      }
+      function selectCity(name) {
+        document.getElementById('cityInput').value = name
+        closeCityModal()
+      }
+      function filterCity() {
+        const input = document.getElementById('citySearch').value.toLowerCase()
+        const items = document.getElementById('cityList').getElementsByTagName('li')
+        for (let i = 0; i < items.length; i++) {
+          const text = items[i].textContent.toLowerCase()
+          items[i].style.display = text.includes(input) ? 'block' : 'none'
+        }
+      }
+    </script>
+    <script>
+      const signupForm = document.getElementById('signup-form')
+      
+      signupForm.addEventListener('submit', async (event) => {
+        event.preventDefault() // Stop the default page reload
+      
+        // Get data from the form inputs
+        const formData = new FormData(signupForm)
+        const data = Object.fromEntries(formData.entries())
+      
+        // ✅ AGE VALIDATION LOGIC
+        const age = parseInt(data.age, 10)
+        if (isNaN(age) || age < 18) {
+          alert('You must be at least 18 years old to use this app.')
+          return
+        }
+        if (age > 79) {
+          alert('You are not allowed to use this app.')
+          return
+        }
+      
+        // The country and city lines have been removed.
+      
+        try {
+          const response = await fetch('http://127.0.0.1:3000/register', {
+            // Your server's address
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          })
+      
+          const result = await response.json()
+      
+          if (response.ok) {
+            alert('Account created successfully!')
+            window.location.href = '/login' // Redirect to login
+          } else {
+            alert('Error: ' + result.message)
+          }
+        } catch (error) {
+          alert('A network error occurred. Please try again.')
+        }
+      })
+    </script>
+  </body>
+</html>

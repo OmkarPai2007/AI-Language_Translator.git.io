@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/style-login.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+
+  <body class="auth-body">
+    <div class="auth-container">
+      <div class="auth-left">
+        <!-- 🔵 Project Heading and Tagline -->
+        <div class="branding">
+          <h1 class="site-title">AI-Language Translator</h1>
+          <p class="site-tagline">Speak | Translate | Connect the World</p>
+        </div>
+
+        <!-- 🔒 Login Form -->
+        <div class="heading-with-line">
+          <h2 class="login-heading">Login</h2>
+          <hr class="heading-underline" />
+        </div>
+        <form id="login-form">
+          <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="email" name="email" placeholder="Email" required />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" name="password" placeholder="Password" required />
+          </div>
+          <button type="submit" class="auth-btn">Login</button>
+          <p class="switch-link">
+            Don't have an account? <a href="/register_page">Sign up</a>
+          </p>
+        </form>
+      </div>
+
+      <div class="auth-right">
+        <div class="shapes"></div>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    const loginForm = document.getElementById('login-form')
+    
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault()
+    
+      const formData = new FormData(loginForm)
+      const data = Object.fromEntries(formData.entries())
+    
+      // Trim email and password to prevent accidental spaces
+      data.email = data.email.trim()
+      data.password = data.password.trim()
+    
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+    
+        if (response.ok) {
+          // ✅ Login successful — redirect to dashboard
+          window.location.href = '/index'
+        } else {
+          const result = await response.json()
+          alert('Login failed: ' + result.message)
+        }
+      } catch (error) {
+        alert('Network error: ' + error.message)
+      }
+    })
+  </script>
+</html>
