@@ -10,7 +10,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 
 
-import bcrypt
+'''import bcrypt'''
 import mysql.connector
 # import requests
 from deep_translator import GoogleTranslator
