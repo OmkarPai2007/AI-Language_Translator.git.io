@@ -42,11 +42,11 @@ gtts_supported = {
     "ur", "vi", "zh-CN", "zh-TW",
 }
 db_config = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": int(os.getenv("DB_PORT", 3306)),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "myapp"),
+    "host": os.getenv("MYSQLHOST") or os.getenv("DB_HOST", "localhost"),
+    "port": int(os.getenv("MYSQLPORT") or os.getenv("DB_PORT", 3306)),
+    "user": os.getenv("MYSQLUSER") or os.getenv("DB_USER", "root"),
+    "password": os.getenv("MYSQLPASSWORD") or os.getenv("DB_PASSWORD", ""),
+    "database": os.getenv("MYSQLDATABASE") or os.getenv("DB_NAME", "myapp"),
 }
 
 
