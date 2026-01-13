@@ -425,7 +425,7 @@ def is_strong_password(password):
 
 @app.route("/register", methods=["POST"])
 def register():
-    data = request.get_json()
+    data = request.get_json(silent=True) or request.form
     fullName = data.get("fullName")
     email = data.get("email")
     password = data.get("password")
