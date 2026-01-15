@@ -81,29 +81,6 @@ def index():
     return render_template("index.html", full_name=full_name, email=email)
 
 
-'''# === Image Generator ===
-@app.route("/image-gen", methods=["GET", "POST"])
-def image_gen():
-    image_path = None
-    error = None
-    if request.method == "POST":
-        prompt = request.form.get("prompt", "")
-        payload = {"inputs": prompt}
-
-        try:
-            response = requests.post(API_URL, headers=HEADERS, json=payload)
-            if response.status_code != 200:
-                error = f"Error: {response.status_code}, {response.text}"
-            else:
-                image = Image.open(BytesIO(response.content))
-                image_path = os.path.join("static", "generated.png")
-                image.save(image_path)
-        except Exception as e:
-            error = str(e)
-
-    return render_template("image-gen.html", image_path=image_path, error=error)'''
-
-
 @app.route("/")
 def home_redirect():
     if session.get("email"):
@@ -367,47 +344,7 @@ def save_history():
     print("History saved to file.")
 
 
-'''import google.generativeai as genai
-from werkzeug.utils import secure_filename
-
-# Configure Gemini API Key
-genai.configure(api_key=os.getenv("Gemini_API"))
-
-
-@app.route("/image-analyze", methods=["GET", "POST"])
-def image_analyze():
-    result = None
-    error = None
-
-    if request.method == "POST":
-        if "image" not in request.files:
-            error = "No image uploaded."
-        else:
-            file = request.files["image"]
-            if file.filename == "":
-                error = "No selected file."
-            else:
-                try:
-                    filename = secure_filename(file.filename)
-                    save_path = os.path.join("static", "uploads", filename)
-                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-                    file.save(save_path)
-
-                    image = Image.open(save_path)
-                    prompt = request.form.get("prompt", "Describe this image in detail")
-
-                    model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-                    response = model.generate_content([prompt, image])
-                    result = response.text
-
-                except Exception as e:
-                    error = str(e)
-
-    return render_template("image-to-text.html", result=result, error=error)'''
-
-
 import re
-
 
 def is_strong_password(password):
     if len(password) < 8:
@@ -475,28 +412,6 @@ def register():
             cursor.close()
         if db_connection and db_connection.is_connected():
             db_connection.close()
-
-
-'''# --- Gemini Chatbot Setup ---
-model = genai.GenerativeModel("gemini-1.5-flash")
-chat = model.start_chat(history=[])
-
-
-@app.route("/chatbot")
-def chatbot_interface():
-    return render_template("chatbot.html")
-
-
-@app.route("/chat", methods=["POST"])
-def handle_chat():
-    user_message = request.json.get("message")
-    if not user_message:
-        return jsonify({"error": "No message provided"}), 400
-    try:
-        response = chat.send_message(user_message)
-        return jsonify({"response": response.text})
-    except Exception as e:
-        return jsonify({"error": f"Error interacting with AI: {str(e)}"}), 500'''
 
 
 @app.route("/buy-plan", methods=["POST"])
