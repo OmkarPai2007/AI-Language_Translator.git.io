@@ -12,7 +12,8 @@ from reportlab.lib.units import inch
 
 
 import bcrypt
-import mysql.connector
+'''import mysql.connector'''
+import psycopg2
 import requests
 from deep_translator import GoogleTranslator
 from dotenv import load_dotenv
