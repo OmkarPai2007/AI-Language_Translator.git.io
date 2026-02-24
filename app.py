@@ -68,11 +68,11 @@ gtts_supported = {
     "sw","ta","te","th","tl","tr","uk","ur","vi","zh-CN","zh-TW",
 }
 db_config = {
-    "host": os.getenv("DB_HOST", "localhost"),
+    "host": os.getenv("DB_HOST"),
     "port": int(os.getenv("DB_PORT", 3306)),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", "omkarhpai"),
-    "database": os.getenv("DB_NAME", "clg"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME"),
     "use_pure": True,
     "connection_timeout": 5,
 }
