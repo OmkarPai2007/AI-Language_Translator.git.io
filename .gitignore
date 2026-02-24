@@ -1,0 +1,8 @@
+.env
+history.json
+__pycache__/
+*.pyc
+static/audio/
+static/receipts/
+static/uploads/
+static/generated.png

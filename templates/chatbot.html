@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <title>Chat with Gemini</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      #chat-container {
+        width: 100%;
+        max-width: 600px;
+        height: 80vh;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #chat-header {
+        padding: 15px;
+        background-color: #4a90e2;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        border-bottom: 1px solid #ddd;
+      }
+      #chat-log {
+        flex-grow: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      .message {
+        padding: 10px 15px;
+        border-radius: 18px;
+        max-width: 75%;
+        line-height: 1.4;
+      }
+      .user-message {
+        background-color: #4a90e2;
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+      }
+      .bot-message {
+        background-color: #e5e5ea;
+        color: #333;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+      #chat-form {
+        display: flex;
+        padding: 15px;
+        border-top: 1px solid #ddd;
+        background-color: #f9f9f9;
+      }
+      #user-input {
+        flex-grow: 1;
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 20px;
+        margin-right: 10px;
+        font-size: 16px;
+      }
+      #user-input:focus {
+        outline: none;
+        border-color: #4a90e2;
+      }
+      #chat-form button {
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.2s;
+      }
+      #chat-form button:hover {
+        background-color: #357abd;
+      }
+      
+      /* Basic styling for Markdown elements */
+      .bot-message pre {
+        background-color: #eee;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        font-size: 0.9em;
+        margin-top: 10px;
+      }
+      .bot-message code {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 2px 4px;
+        border-radius: 3px;
+      }
+      .bot-message p {
+        margin-bottom: 0.5em; /* Adjust spacing between paragraphs */
+      }
+      .bot-message ul,
+      .bot-message ol {
+        margin-left: 20px;
+        margin-bottom: 0.5em;
+      }
+      .bot-message h1,
+      .bot-message h2,
+      .bot-message h3,
+      .bot-message h4,
+      .bot-message h5,
+      .bot-message h6 {
+        margin-top: 1em;
+        margin-bottom: 0.5em;
+        font-weight: bold;
+      }
+      .bot-message h1 {
+        font-size: 1.8em;
+      }
+      .bot-message h2 {
+        font-size: 1.5em;
+      }
+      .bot-message h3 {
+        font-size: 1.3em;
+      }
+      
+      /* Styles for the dynamically created loading message */
+      .loading-message {
+        /* Changed from ID to class */
+        align-self: flex-start;
+        padding: 10px 15px;
+        border-radius: 18px;
+        max-width: 75%;
+        line-height: 1.4;
+        background-color: #e5e5ea; /* Same as bot message for consistency */
+        color: #555;
+        font-style: italic;
+        border-bottom-left-radius: 4px;
+        animation: pulse 1.5s infinite ease-in-out; /* Simple pulse animation */
+        display: flex; /* Ensure flex for spinner alignment */
+        align-items: center; /* Vertically align spinner and text */
+        gap: 8px; /* Space between spinner and text */
+      }
+      
+      @keyframes pulse {
+        0% {
+          opacity: 0.7;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.7;
+        }
+      }
+      
+      /* Spinner styles */
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: #4a90e2; /* Blue color */
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chat-container">
+      <div id="chat-header">AI Chatbot</div>
+      <div id="chat-log">
+        <div class="message bot-message">Hello! I'm your AI assistant. Type a message to start.</div>
+      </div>
+      <form id="chat-form">
+        <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" required />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+      const chatForm = document.getElementById('chat-form')
+      const userInput = document.getElementById('user-input')
+      const chatLog = document.getElementById('chat-log')
+      
+      // Variable to hold the dynamically created loading message element
+      let currentLoadingMessageElement = null
+      
+      chatForm.addEventListener('submit', async function (event) {
+        event.preventDefault()
+        const userMessage = userInput.value.trim()
+      
+        if (userMessage) {
+          addMessage(userMessage, 'user')
+          userInput.value = '' // Clear the input field
+      
+          // Create and show loading message
+          currentLoadingMessageElement = createLoadingMessage()
+          chatLog.appendChild(currentLoadingMessageElement)
+          chatLog.scrollTop = chatLog.scrollHeight // Scroll to bottom to show loading message
+      
+          try {
+            const response = await fetch('/chat', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ message: userMessage })
+            })
+      
+            const data = await response.json()
+      
+            // Remove loading message once response is received
+            if (currentLoadingMessageElement) {
+              chatLog.removeChild(currentLoadingMessageElement)
+              currentLoadingMessageElement = null // Clear reference
+            }
+      
+            if (data.response) {
+              addMessage(data.response, 'bot')
+            } else if (data.error) {
+              addMessage(`Error: ${data.error}`, 'bot')
+            }
+          } catch (error) {
+            console.error('Error sending message to backend:', error)
+            // Remove loading message on error as well
+            if (currentLoadingMessageElement) {
+              chatLog.removeChild(currentLoadingMessageElement)
+              currentLoadingMessageElement = null
+            }
+            addMessage('Sorry, I could not connect to the chatbot. Please try again later.', 'bot')
+          }
+        }
+      })
+      
+      function addMessage(text, sender) {
+        const messageElement = document.createElement('div')
+        messageElement.classList.add('message', `${sender}-message`)
+      
+        if (sender === 'bot') {
+          messageElement.innerHTML = marked.parse(text)
+        } else {
+          messageElement.textContent = text
+        }
+      
+        chatLog.appendChild(messageElement)
+        chatLog.scrollTop = chatLog.scrollHeight
+      }
+      
+      // New function to create the loading message element dynamically
+      function createLoadingMessage() {
+        const loadingDiv = document.createElement('div')
+        loadingDiv.classList.add('message', 'loading-message') // Use the new .loading-message class
+      
+        const spinnerSpan = document.createElement('span')
+        spinnerSpan.classList.add('spinner')
+      
+        const textNode = document.createTextNode('Thinking...')
+      
+        loadingDiv.appendChild(spinnerSpan)
+        loadingDiv.appendChild(textNode)
+      
+        return loadingDiv
+      }
+    </script>
+  </body>
+</html>

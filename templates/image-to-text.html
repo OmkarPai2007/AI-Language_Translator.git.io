@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Analyzer – Gemini AI</title>
+  <link rel="stylesheet" href="/static/stylenew.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Image Analyzer with Gemini AI</h1>
+    <form method="POST" enctype="multipart/form-data">
+      <label>Choose Image:</label><br>
+      <input type="file" name="image" accept="image/*" required><br><br>
+
+      <label>Custom Prompt (optional):</label><br>
+      <input type="text" name="prompt" placeholder="Describe this image in detail" style="width: 100%;"><br><br>
+
+      <button type="submit">Analyze Image</button>
+    </form>
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if result %}
+      <h2>🧠 Gemini’s Description:</h2>
+      <p style="white-space: pre-wrap;">{{ result }}</p>
+    {% endif %}
+  </div>
+</body>
+</html>
