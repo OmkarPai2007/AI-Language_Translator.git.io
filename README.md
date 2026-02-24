@@ -1,6 +1,9 @@
 Project by
+
 [Shweta Pandya] (https://github.com/shwetapandya31)
+
 [Omkar Pai] (https://github.com/OmkarPai2007)
+
 This Is an AI language translator, Image generator and analyzer which is made for college project
 
 Commands to push code in Git-Hub
