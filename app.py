@@ -57,6 +57,37 @@ def get_db():
     )
 
 # =========================
+# AUTO CREATE TABLE
+# =========================
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users2 (
+            id SERIAL PRIMARY KEY,
+            full_name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            pass VARCHAR(255) NOT NULL,
+            messages_left INT DEFAULT 3,
+            translation_limit INT DEFAULT 3,
+            translation_used INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# SAFE INIT
+try:
+    init_db()
+    print("Database initialized successfully.")
+except Exception as e:
+    print("Database initialization failed:", e)
+
+# =========================
 # HISTORY
 # =========================
 history_file = "history.json"
