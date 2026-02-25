@@ -124,33 +124,50 @@ def google_login():
 
 @app.route("/google/callback")
 def google_callback():
-    token = google.authorize_access_token()
-    resp = google.get("userinfo")
-    user_info = resp.json()
+    try:
+        token = google.authorize_access_token()
 
-    email = user_info["email"]
-    full_name = user_info["name"]
+        # Get user info safely
+        user_info = token.get("userinfo")
 
-    conn = get_db()
-    cursor = conn.cursor()
+        if not user_info:
+            resp = google.get(
+                "https://openidconnect.googleapis.com/v1/userinfo"
+            )
+            user_info = resp.json()
 
-    cursor.execute("SELECT id FROM users2 WHERE email=%s", (email,))
-    user = cursor.fetchone()
+        if not user_info:
+            return "Failed to fetch user info", 400
 
-    if not user:
-        cursor.execute("""
-            INSERT INTO users2 (full_name, email, pass)
-            VALUES (%s, %s, %s)
-        """, (full_name, email, "google_auth"))
-        conn.commit()
+        email = user_info.get("email")
+        full_name = user_info.get("name")
 
-    session["email"] = email
-    session["full_name"] = full_name
+        if not email:
+            return "Email not provided by Google", 400
 
-    cursor.close()
-    conn.close()
+        conn = get_db()
+        cursor = conn.cursor()
 
-    return redirect(url_for("index"))
+        cursor.execute("SELECT id FROM users2 WHERE email=%s", (email,))
+        user = cursor.fetchone()
+
+        if not user:
+            cursor.execute("""
+                INSERT INTO users2 (full_name, email, pass)
+                VALUES (%s, %s, %s)
+            """, (full_name, email, "google_auth"))
+            conn.commit()
+
+        session["email"] = email
+        session["full_name"] = full_name
+
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for("index"))
+
+    except Exception as e:
+        return f"Google login error: {str(e)}"
 
 @app.route("/index")
 def index():
