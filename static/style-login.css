@@ -423,3 +423,24 @@ body.auth-body {
   cursor: pointer;
 }
 
+.google-btn {
+  display: block;
+  text-align: center;
+  background: white;
+  color: #444;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.google-btn i {
+  margin-right: 8px;
+  color: #DB4437;
+}
+
+.google-btn:hover {
+  background: #f5f5f5;
+}
