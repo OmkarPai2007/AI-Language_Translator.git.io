@@ -54,7 +54,7 @@ google = oauth.register(
 )
 
 # ============================================================
-# DATABASE CONFIGURATION (Render PostgreSQL)
+# DATABASE CONFIGURATION
 # ============================================================
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -67,30 +67,6 @@ def get_db():
         host=result.hostname,
         port=result.port
     )
-
-def init_db():
-    conn = get_db()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users2 (
-            id SERIAL PRIMARY KEY,
-            full_name VARCHAR(255),
-            email VARCHAR(255) UNIQUE,
-            pass VARCHAR(255),
-            translation_limit INT DEFAULT 3,
-            translation_used INT DEFAULT 0
-        );
-    """)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-try:
-    init_db()
-except Exception as e:
-    print("DB Init Error:", e)
 
 # ============================================================
 # AI CONFIGURATION
@@ -152,138 +128,46 @@ def logout():
     return redirect(url_for("login"))
 
 # ============================================================
-# GOOGLE LOGIN ROUTES
-# ============================================================
-@app.route("/google-login")
-def google_login():
-    redirect_uri = url_for("google_callback", _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-@app.route("/google/callback")
-def google_callback():
-    try:
-        token = google.authorize_access_token()
-        user_info = token.get("userinfo")
-
-        if not user_info:
-            resp = google.get(
-                "https://openidconnect.googleapis.com/v1/userinfo"
-            )
-            user_info = resp.json()
-
-        email = user_info.get("email")
-        full_name = user_info.get("name")
-
-        conn = get_db()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT id FROM users2 WHERE email=%s", (email,))
-        user = cursor.fetchone()
-
-        if not user:
-            cursor.execute("""
-                INSERT INTO users2 (full_name, email, pass)
-                VALUES (%s, %s, %s)
-            """, (full_name, email, "google_auth"))
-            conn.commit()
-
-        session["email"] = email
-        session["full_name"] = full_name
-
-        cursor.close()
-        conn.close()
-
-        return redirect(url_for("index"))
-
-    except Exception as e:
-        return f"Google login error: {str(e)}"
-
-# ============================================================
-# REGISTER & LOGIN (NORMAL)
-# ============================================================
-def is_strong_password(password):
-    return (
-        len(password) >= 8 and
-        re.search(r"[A-Z]", password) and
-        re.search(r"[a-z]", password) and
-        re.search(r"[0-9]", password) and
-        re.search(r"[!@#$%^&*(),.?\":{}|<>]", password)
-    )
-
-@app.route("/register", methods=["POST"])
-def register():
-    data = request.get_json()
-    fullName = data.get("fullName")
-    email = data.get("email")
-    password = data.get("password")
-
-    if not is_strong_password(password):
-        return jsonify({"message": "Weak password"}), 400
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT id FROM users2 WHERE email=%s", (email,))
-    if cursor.fetchone():
-        return jsonify({"message": "Email exists"}), 409
-
-    cursor.execute("""
-        INSERT INTO users2 (full_name, email, pass)
-        VALUES (%s, %s, %s)
-    """, (fullName, email, password))
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return jsonify({"message": "Registered successfully!"}), 201
-
-@app.route("/login", methods=["POST"])
-def login_post():
-    data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT full_name, pass FROM users2 WHERE email=%s
-    """, (email,))
-    user = cursor.fetchone()
-
-    if not user or user[1] != password:
-        return jsonify({"message": "Invalid credentials"}), 401
-
-    session["email"] = email
-    session["full_name"] = user[0]
-
-    cursor.close()
-    conn.close()
-
-    return jsonify({"message": "Login successful!"})
-
-# ============================================================
-# TRANSLATION
+# TRANSLATION (WITH AUDIO)
 # ============================================================
 @app.route("/translate", methods=["POST"])
 def translate():
-    text = request.form.get("text")
+    text = request.form.get("text", "").strip()
     lang = request.form.get("language")
+    play_audio = request.form.get("playAudio") == "true"
+
+    if not text:
+        return jsonify({"translated": "No text provided."})
 
     translated = GoogleTranslator(source="auto", target=lang).translate(text)
+
+    filename = ""
+    audio_path = ""
+
+    if play_audio:
+        filename = f"audio_{uuid.uuid4().hex}.mp3"
+        full_path = os.path.join("static/audio", filename)
+
+        tts = gTTS(text=translated, lang=lang)
+        tts.save(full_path)
+
+        audio_path = f"/static/audio/{filename}"
 
     history.insert(0, {
         "target_lang": lang,
         "original_text": text,
         "translated_text": translated,
+        "audio_file": filename,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
     })
 
-    return jsonify({"translated": translated})
+    return jsonify({
+        "translated": translated,
+        "audio_path": audio_path
+    })
 
 # ============================================================
-# MULTI LANGUAGE TRANSLATION
+# MULTI LANGUAGE TRANSLATION (WITH AUDIO)
 # ============================================================
 @app.route("/translate-multi", methods=["POST"])
 def translate_multi():
@@ -293,6 +177,7 @@ def translate_multi():
     data = request.get_json()
     text = data.get("text", "").strip()
     languages = data.get("languages", [])
+    play_audio = data.get("playAudio", False)
 
     if not text or not languages:
         return jsonify({"error": "Missing text or languages."}), 400
@@ -300,38 +185,60 @@ def translate_multi():
     results = []
 
     for lang in languages:
-        try:
-            translated = GoogleTranslator(
-                source="auto",
-                target=lang
-            ).translate(text)
+        translated = GoogleTranslator(source="auto", target=lang).translate(text)
 
-            history.insert(0, {
-                "target_lang": lang,
-                "original_text": text,
-                "translated_text": translated,
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-            })
+        filename = ""
+        audio_path = ""
 
-            results.append({
-                "language": lang,
-                "translated_text": translated
-            })
+        if play_audio:
+            filename = f"audio_{uuid.uuid4().hex}.mp3"
+            full_path = os.path.join("static/audio", filename)
 
-        except Exception as e:
-            results.append({
-                "language": lang,
-                "translated_text": f"Error translating to {lang}"
-            })
+            tts = gTTS(text=translated, lang=lang)
+            tts.save(full_path)
+
+            audio_path = f"/static/audio/{filename}"
+
+        history.insert(0, {
+            "target_lang": lang,
+            "original_text": text,
+            "translated_text": translated,
+            "audio_file": filename,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+        results.append({
+            "language": lang,
+            "translated_text": translated,
+            "audio_path": audio_path
+        })
 
     return jsonify({"translations": results})
-    
-@app.route("/history")
-def show_history():
-    return render_template("history.html", history=history)
 
 # ============================================================
-# TEXT TO IMAGE
+# HISTORY WITH FILTER
+# ============================================================
+@app.route("/history")
+def show_history():
+    selected_lang = request.args.get("lang")
+
+    filtered = (
+        [entry for entry in history if entry["target_lang"] == selected_lang]
+        if selected_lang and selected_lang != "All"
+        else history
+    )
+
+    available_languages = sorted(set(item["target_lang"] for item in history))
+
+    return render_template(
+        "history.html",
+        history=filtered,
+        selected_lang=selected_lang,
+        available_languages=available_languages
+    )
+
+# ============================================================
+# IMAGE GENERATION
 # ============================================================
 @app.route("/image-gen", methods=["GET", "POST"])
 def image_gen():
