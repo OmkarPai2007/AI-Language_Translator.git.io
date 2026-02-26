@@ -35,23 +35,9 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change-this-secret")
 CORS(app)
 
-# Create required folders
 os.makedirs("static/audio", exist_ok=True)
 os.makedirs("static/uploads", exist_ok=True)
 os.makedirs("static/receipts", exist_ok=True)
-
-# ============================================================
-# GOOGLE OAUTH CONFIGURATION
-# ============================================================
-oauth = OAuth(app)
-
-google = oauth.register(
-    name='google',
-    client_id=os.getenv("GOOGLE_CLIENT_ID"),
-    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid email profile'}
-)
 
 # ============================================================
 # DATABASE CONFIGURATION
@@ -68,8 +54,45 @@ def get_db():
         port=result.port
     )
 
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users2 (
+            id SERIAL PRIMARY KEY,
+            full_name VARCHAR(255),
+            email VARCHAR(255) UNIQUE,
+            pass VARCHAR(255),
+            translation_limit INT DEFAULT 3,
+            translation_used INT DEFAULT 0
+        );
+    """)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+try:
+    init_db()
+except Exception as e:
+    print("DB Init Error:", e)
+
 # ============================================================
-# AI CONFIGURATION
+# GOOGLE OAUTH
+# ============================================================
+oauth = OAuth(app)
+
+google = oauth.register(
+    name='google',
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+# ============================================================
+# AI CONFIG
 # ============================================================
 client = InferenceClient(
     provider="hf-inference",
@@ -81,7 +104,7 @@ chat_model = genai.GenerativeModel("gemini-2.5-flash")
 chat = chat_model.start_chat(history=[])
 
 # ============================================================
-# HISTORY STORAGE
+# HISTORY
 # ============================================================
 history_file = "history.json"
 history = []
@@ -128,6 +151,114 @@ def logout():
     return redirect(url_for("login"))
 
 # ============================================================
+# GOOGLE LOGIN
+# ============================================================
+@app.route("/google-login")
+def google_login():
+    redirect_uri = url_for("google_callback", _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route("/google/callback")
+def google_callback():
+    token = google.authorize_access_token()
+    user_info = token.get("userinfo")
+
+    if not user_info:
+        resp = google.get("https://openidconnect.googleapis.com/v1/userinfo")
+        user_info = resp.json()
+
+    email = user_info.get("email")
+    full_name = user_info.get("name")
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id FROM users2 WHERE email=%s", (email,))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.execute("""
+            INSERT INTO users2 (full_name, email, pass)
+            VALUES (%s, %s, %s)
+        """, (full_name, email, "google_auth"))
+        conn.commit()
+
+    session["email"] = email
+    session["full_name"] = full_name
+
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for("index"))
+
+# ============================================================
+# REGISTER & LOGIN
+# ============================================================
+def is_strong_password(password):
+    return (
+        len(password) >= 8 and
+        re.search(r"[A-Z]", password) and
+        re.search(r"[a-z]", password) and
+        re.search(r"[0-9]", password) and
+        re.search(r"[!@#$%^&*(),.?\":{}|<>]", password)
+    )
+
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    fullName = data.get("fullName")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not is_strong_password(password):
+        return jsonify({"message": "Weak password"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id FROM users2 WHERE email=%s", (email,))
+    if cursor.fetchone():
+        return jsonify({"message": "Email exists"}), 409
+
+    cursor.execute("""
+        INSERT INTO users2 (full_name, email, pass)
+        VALUES (%s, %s, %s)
+    """, (fullName, email, password))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Registered successfully!"})
+
+@app.route("/login", methods=["POST"])
+def login_post():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT full_name, pass
+        FROM users2 WHERE email=%s
+    """, (email,))
+    user = cursor.fetchone()
+
+    if not user or user[1] != password:
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    session["email"] = email
+    session["full_name"] = user[0]
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Login successful!"})
+
+
+# ============================================================
 # TRANSLATION (WITH AUDIO)
 # ============================================================
 @app.route("/translate", methods=["POST"])
@@ -147,10 +278,7 @@ def translate():
     if play_audio:
         filename = f"audio_{uuid.uuid4().hex}.mp3"
         full_path = os.path.join("static/audio", filename)
-
-        tts = gTTS(text=translated, lang=lang)
-        tts.save(full_path)
-
+        gTTS(text=translated, lang=lang).save(full_path)
         audio_path = f"/static/audio/{filename}"
 
     history.insert(0, {
@@ -167,20 +295,54 @@ def translate():
     })
 
 # ============================================================
-# MULTI LANGUAGE TRANSLATION (WITH AUDIO)
+# MULTI LANGUAGE TRANSLATION (WITH LIMIT + AUDIO)
 # ============================================================
 @app.route("/translate-multi", methods=["POST"])
 def translate_multi():
     if "email" not in session:
         return jsonify({"error": "Not logged in."}), 401
 
+    email = session["email"]
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT translation_limit, translation_used
+        FROM users2
+        WHERE email=%s
+    """, (email,))
+    result = cursor.fetchone()
+
+    if not result:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "User not found."}), 404
+
+    limit, used = result
+
+    if used >= limit:
+        cursor.close()
+        conn.close()
+        return jsonify({
+            "error": "You have reached your translation limit.",
+            "limit_reached": True
+        }), 403
+
+    # Increase usage count
+    cursor.execute("""
+        UPDATE users2
+        SET translation_used = translation_used + 1
+        WHERE email=%s
+    """, (email,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
     data = request.get_json()
     text = data.get("text", "").strip()
     languages = data.get("languages", [])
     play_audio = data.get("playAudio", False)
-
-    if not text or not languages:
-        return jsonify({"error": "Missing text or languages."}), 400
 
     results = []
 
@@ -193,10 +355,7 @@ def translate_multi():
         if play_audio:
             filename = f"audio_{uuid.uuid4().hex}.mp3"
             full_path = os.path.join("static/audio", filename)
-
-            tts = gTTS(text=translated, lang=lang)
-            tts.save(full_path)
-
+            gTTS(text=translated, lang=lang).save(full_path)
             audio_path = f"/static/audio/{filename}"
 
         history.insert(0, {
@@ -214,6 +373,95 @@ def translate_multi():
         })
 
     return jsonify({"translations": results})
+
+# ============================================================
+# BUY PLAN (WITH PDF RECEIPT + SESSION UPDATE)
+# ============================================================
+@app.route("/buy-plan", methods=["POST"])
+def buy_plan():
+    if not session.get("email"):
+        return jsonify({"message": "Not logged in."}), 401
+
+    data = request.get_json()
+    extra_messages = int(data.get("messages", 0))
+
+    if extra_messages not in [5, 10, 15]:
+        return jsonify({"message": "Invalid plan selected."}), 400
+
+    email = session["email"]
+    full_name = session.get("full_name", "Unknown User")
+
+    # Generate PDF Receipt
+    price_map = {5: "49/- INR", 10: "89/- INR", 15: "129/- INR"}
+    plan_price = price_map.get(extra_messages, "Unknown")
+
+    os.makedirs("static/receipts", exist_ok=True)
+    filename = f"receipt_{uuid.uuid4().hex}.pdf"
+    receipt_path = os.path.join("static", "receipts", filename)
+
+    c = canvas.Canvas(receipt_path, pagesize=A5)
+    width, height = A5
+
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(width / 2, height - 40, "AI Language Translator")
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawCentredString(width / 2, height - 60, "Receipt of Purchase")
+
+    c.line(40, height - 70, width - 40, height - 70)
+
+    c.setFont("Helvetica", 10)
+    y = height - 100
+
+    details = [
+        f"Name of Purchaser: {full_name}",
+        f"Email Address: {email}",
+        f"Plan Purchased: {extra_messages} Translation Credits",
+        f"Plan Price: {plan_price}",
+        f"Date: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Receipt ID: {uuid.uuid4()}",
+    ]
+
+    for detail in details:
+        c.drawString(50, y, detail)
+        y -= 15
+
+    c.setFont("Helvetica-Oblique", 9)
+    c.drawString(50, 30, "Thank you for your purchase!")
+    c.save()
+
+    # Update credits in PostgreSQL
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users2
+        SET translation_limit = translation_limit + %s
+        WHERE email=%s
+    """, (extra_messages, email))
+    conn.commit()
+
+    cursor.execute("""
+        SELECT translation_limit, translation_used
+        FROM users2
+        WHERE email=%s
+    """, (email,))
+
+    new_limit, new_used = cursor.fetchone()
+
+    session["multi_limit"] = new_limit
+    session["multi_count"] = new_used
+
+    cursor.close()
+    conn.close()
+
+    receipt_url = f"/static/receipts/{filename}"
+
+    return jsonify({
+        "message": f"{extra_messages} translation credits added!",
+        "new_limit": new_limit,
+        "receipt_url": receipt_url
+    })
 
 # ============================================================
 # HISTORY WITH FILTER
@@ -299,8 +547,15 @@ def chatbot_interface():
 @app.route("/chat", methods=["POST"])
 def handle_chat():
     user_message = request.json.get("message")
-    response = chat.send_message(user_message)
-    return jsonify({"response": response.text})
+
+    if not user_message:
+        return jsonify({"error": "No message provided"}), 400
+
+    try:
+        response = chat.send_message(user_message)
+        return jsonify({"response": response.text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ============================================================
 # RUN
