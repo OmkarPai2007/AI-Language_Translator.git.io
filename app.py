@@ -282,6 +282,50 @@ def translate():
 
     return jsonify({"translated": translated})
 
+# ============================================================
+# MULTI LANGUAGE TRANSLATION
+# ============================================================
+@app.route("/translate-multi", methods=["POST"])
+def translate_multi():
+    if "email" not in session:
+        return jsonify({"error": "Not logged in."}), 401
+
+    data = request.get_json()
+    text = data.get("text", "").strip()
+    languages = data.get("languages", [])
+
+    if not text or not languages:
+        return jsonify({"error": "Missing text or languages."}), 400
+
+    results = []
+
+    for lang in languages:
+        try:
+            translated = GoogleTranslator(
+                source="auto",
+                target=lang
+            ).translate(text)
+
+            history.insert(0, {
+                "target_lang": lang,
+                "original_text": text,
+                "translated_text": translated,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            })
+
+            results.append({
+                "language": lang,
+                "translated_text": translated
+            })
+
+        except Exception as e:
+            results.append({
+                "language": lang,
+                "translated_text": f"Error translating to {lang}"
+            })
+
+    return jsonify({"translations": results})
+    
 @app.route("/history")
 def show_history():
     return render_template("history.html", history=history)
