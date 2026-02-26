@@ -5,8 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI-Language Translator</title>
 
+  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <!-- TomSelect -->
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
@@ -19,8 +24,8 @@
     }
     .glass {
       backdrop-filter: blur(10px);
-      background-color: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background-color: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.15);
     }
     .neon-text {
       text-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff, 0 0 20px #00f7ff;
@@ -42,113 +47,98 @@
       <p class="text-md text-cyan-200 mt-2">Speak, Translate & Hear AI in Action</p>
     </header>
 
-    <section class="flex flex-col items-center space-y-4">
-      <label class="block text-lg font-semibold">Speech Language:</label>
-      <select id="speechLang" class="text-black px-2 py-1 rounded w-full"></select>
+    <!-- Speech -->
+    <section class="space-y-4">
+      <label class="font-semibold">Speech Language:</label>
+      <select id="speechLang" class="text-black w-full"></select>
 
       <textarea id="inputText" rows="3" class="w-full p-2 rounded text-black" placeholder="Type or speak here..."></textarea>
 
-      <button onclick="startRecognition()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl">
+      <button onclick="startRecognition()" class="px-4 py-2 bg-green-600 rounded-xl">
         🎤 Start Speech Recognition
       </button>
 
-      <label class="flex items-center space-x-3">
-        <input type="checkbox" id="playAudio" checked class="w-5 h-5" />
-        <span class="text-xl font-semibold">🎧 Play Audio</span>
+      <label class="flex items-center space-x-2">
+        <input type="checkbox" id="playAudio" checked />
+        <span>🎧 Play Audio</span>
       </label>
     </section>
 
+    <!-- Single Translate -->
     <section class="space-y-4">
-      <label class="block text-lg font-semibold">Translate to:</label>
-      <select id="language" class="text-black px-2 py-1 rounded w-full"></select>
+      <label class="font-semibold">Translate to:</label>
+      <select id="language" class="text-black w-full"></select>
 
-      <button onclick="translateText()" class="px-4 py-2 w-fit mx-auto bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+      <button onclick="translateText()" class="px-4 py-2 bg-blue-600 rounded-xl">
         🌍 Translate
       </button>
     </section>
 
+    <!-- Multi Translate -->
     <section class="space-y-4">
-      <label class="block text-lg font-semibold">Translate to (Multiple):</label>
-      <select id="multiLangSelect" multiple class="w-full p-2 rounded bg-gray-800 text-white"></select>
+      <label class="font-semibold">Translate to (Multiple):</label>
+      <select id="multiLangSelect" multiple size="6" class="w-full p-2 rounded text-black"></select>
 
-      <button onclick="translateSelected()" class="px-4 py-2 w-fit mx-auto bg-green-600 hover:bg-green-700 text-white rounded-xl">
+      <button onclick="translateSelected()" class="px-4 py-2 bg-green-600 rounded-xl">
         🌐 Translate Selected
       </button>
 
-      <div id="multi-result" class="space-y-4 text-white"></div>
+      <div id="multi-result"></div>
     </section>
 
-    <div id="feedback" class="text-center text-yellow-300 text-sm min-h-[20px]"></div>
+    <div id="feedback" class="text-yellow-300"></div>
 
-    <audio id="audioPlayback" controls class="w-full mt-4 hidden"></audio>
-    <div class="w-full flex justify-center">
-      <a id="downloadLink" class="hidden text-blue-300 underline mt-2" download>⬇️ Download MP3</a>
+    <audio id="audioPlayback" controls class="hidden w-full"></audio>
+
+    <div class="flex justify-center gap-4 mt-4">
+      <a href="/history" class="px-4 py-2 bg-purple-600 rounded-xl">🕓 History</a>
+      <a href="/image-gen" class="px-4 py-2 bg-purple-600 rounded-xl">🖼️ Text to Image</a>
+      <a href="/image-analyze" class="px-4 py-2 bg-purple-600 rounded-xl">👁️ Image to Text</a>
+      <a href="/chatbot" class="px-4 py-2 bg-purple-600 rounded-xl">💬 Chatbot</a>
     </div>
 
-    <div class="flex flex-wrap justify-center gap-4 mt-4">
-        <a href="/history" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">🕓 View History</a>
-        <a href="/image-gen" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">🖼️ Text to Image</a>
-        <a href="/image-analyze" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">👁️ Image to Text</a>
-        <a href="/chatbot" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">💬 Start Chatbot</a>
-    </div>
-
-  </div>
-</div>
-
-<!-- Purchase Limit Modal -->
-<div id="limitModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-60 z-50 flex justify-center items-center" style="display:none;">
-  <div class="bg-white p-8 rounded-2xl max-w-lg w-11/12 text-center shadow-lg relative">
-    <h2 class="text-2xl font-bold text-black mb-4">🚫 Free Limit Reached</h2>
-    <p class="text-gray-700 mb-6">Choose a plan to unlock more multi-language translations!</p>
-
-    <div class="flex flex-wrap justify-center gap-4">
-      <div class="bg-gray-100 p-4 rounded-lg border-2 border-blue-500 flex-grow">
-        <h3 class="text-blue-600 text-lg font-semibold">🔓 5 Extra Translations</h3>
-        <p class="text-sm text-gray-500">₹49</p>
-        <button class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-full" onclick="buyPlan(5)">Buy Now</button>
-      </div>
-      <div class="bg-gray-100 p-4 rounded-lg border-2 border-green-500 flex-grow">
-        <h3 class="text-green-600 text-lg font-semibold">✨ 10 Extra Translations</h3>
-        <p class="text-sm text-gray-500">₹79</p>
-        <button class="mt-2 px-4 py-2 bg-green-600 text-white rounded-full" onclick="buyPlan(10)">Buy Now</button>
-      </div>
-      <div class="bg-gray-100 p-4 rounded-lg border-2 border-orange-500 flex-grow">
-        <h3 class="text-orange-600 text-lg font-semibold">🚀 15 Extra Translations</h3>
-        <p class="text-sm text-gray-500">₹99</p>
-        <button class="mt-2 px-4 py-2 bg-orange-500 text-white rounded-full" onclick="buyPlan(15)">Buy Now</button>
-      </div>
-    </div>
-
-    <button onclick="closeModal()" class="mt-6 text-sm underline text-gray-600">Maybe later</button>
   </div>
 </div>
 
 <script>
-function buyPlan(extraMessages) {
-  feedback.textContent = 'Processing your purchase...';
+const languages = {
+  en:'English', hi:'Hindi', mr:'Marathi', kn:'Kannada',
+  gu:'Gujarati', ml:'Malayalam', de:'German', fr:'French',
+  es:'Spanish', ja:'Japanese'
+};
 
-  fetch("/buy-plan", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: extraMessages }),
+const speechLangSelect = document.getElementById("speechLang");
+const translateLangSelect = document.getElementById("language");
+const multiLangSelect = document.getElementById("multiLangSelect");
+
+for (const [code,name] of Object.entries(languages)) {
+  speechLangSelect.add(new Option(name, code));
+  translateLangSelect.add(new Option(name, code));
+  multiLangSelect.add(new Option(name, code));
+}
+
+/* ===== THIS IS THE IMPORTANT FIX ===== */
+new TomSelect('#speechLang');
+new TomSelect('#language');
+new TomSelect('#multiLangSelect');  // ← MULTI FIXED HERE
+/* ===================================== */
+
+function buyPlan(extraMessages){
+  fetch("/buy-plan",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({messages:extraMessages})
   })
-  .then(res => res.json())
-  .then(data => {
-    feedback.textContent = `✅ ${data.message}`;
-    document.getElementById("limitModal").style.display = "none";
-
-    if (data.receipt_url) {
-      const link = document.createElement("a");
-      link.href = data.receipt_url;
-      link.download = "";
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.receipt_url){
+      const link=document.createElement("a");
+      link.href=data.receipt_url;
+      link.download="";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
-  })
-  .catch(error => {
-    console.error(error);
-    feedback.textContent = `❌ Error: ${error.message}`;
   });
 }
 </script>
