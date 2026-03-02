@@ -539,14 +539,23 @@ def admin_dashboard():
     if not session.get("email"):
         return redirect(url_for("login"))
 
-    if session.get("email") != os.getenv("ADMIN_EMAIL"):
-        return "Unauthorized Access ❌", 403
+    email = session["email"]
 
     conn = get_db()
     cursor = conn.cursor()
 
+    # Check if current user is admin
+    cursor.execute("SELECT is_admin FROM users2 WHERE email=%s", (email,))
+    result = cursor.fetchone()
+
+    if not result or not result[0]:
+        cursor.close()
+        conn.close()
+        return "Unauthorized ❌", 403
+
+    # Fetch all users
     cursor.execute("""
-        SELECT full_name, email, translation_limit, translation_used
+        SELECT id, full_name, email, translation_limit, translation_used, is_admin
         FROM users2
         ORDER BY id DESC
     """)
@@ -557,6 +566,36 @@ def admin_dashboard():
     conn.close()
 
     return render_template("admin.html", users=users)
+
+@app.route("/toggle-admin/<int:user_id>")
+def toggle_admin(user_id):
+    if not session.get("email"):
+        return redirect(url_for("login"))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Check if current user is admin
+    cursor.execute("SELECT is_admin FROM users2 WHERE email=%s", (session["email"],))
+    current_user = cursor.fetchone()
+
+    if not current_user or not current_user[0]:
+        cursor.close()
+        conn.close()
+        return "Unauthorized ❌", 403
+
+    # Toggle admin status
+    cursor.execute("""
+        UPDATE users2
+        SET is_admin = NOT is_admin
+        WHERE id=%s
+    """, (user_id,))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for("admin_dashboard"))
 
 # ============================================================
 # IMAGE TO TEXT
