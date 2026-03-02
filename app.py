@@ -132,6 +132,12 @@ def home_redirect():
 def index():
     if not session.get("email"):
         return redirect(url_for("login"))
+    price_map={
+        5: "₹49",
+        10:"₹89",
+        15: "₹129"
+    }
+    
     return render_template("index.html",
         full_name=session["full_name"],
         email=session["email"]
