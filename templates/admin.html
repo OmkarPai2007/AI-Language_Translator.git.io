@@ -16,16 +16,35 @@
             <th class="p-3">Limit</th>
             <th class="p-3">Used</th>
             <th class="p-3">Remaining</th>
+            <th class="p-3">Role</th>
+            <th class="p-3">Action</th>
         </tr>
     </thead>
     <tbody>
         {% for user in users %}
         <tr class="border-t border-gray-700 text-center">
-            <td class="p-3">{{ user[0] }}</td>
             <td class="p-3">{{ user[1] }}</td>
             <td class="p-3">{{ user[2] }}</td>
             <td class="p-3">{{ user[3] }}</td>
-            <td class="p-3">{{ user[2] - user[3] }}</td>
+            <td class="p-3">{{ user[4] }}</td>
+            <td class="p-3">{{ user[3] - user[4] }}</td>
+            <td class="p-3">
+                {% if user[5] %}
+                    👑 Admin
+                {% else %}
+                    👤 User
+                {% endif %}
+            </td>
+            <td class="p-3">
+                <a href="/toggle-admin/{{ user[0] }}"
+                   class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700">
+                    {% if user[5] %}
+                        Remove Admin
+                    {% else %}
+                        Make Admin
+                    {% endif %}
+                </a>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
