@@ -289,12 +289,15 @@ def translate():
         gTTS(text=translated, lang=lang).save(full_path)
         audio_path = f"/static/audio/{filename}"
 
+    ist=pytz.timezone("Asia/Kolkata")
+    current_time = datetime.now(ist).strftime("%Y-%m-%d %H:%M-%S")
+
     history.insert(0, {
         "target_lang": lang,
         "original_text": text,
         "translated_text": translated,
         "audio_file": filename,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": current_time
     })
 
     return jsonify({
@@ -366,12 +369,15 @@ def translate_multi():
             gTTS(text=translated, lang=lang).save(full_path)
             audio_path = f"/static/audio/{filename}"
 
+        ist=pytz.timezone("Asia/Kolkata")
+        current_time = datetime.now(ist).strftime("%Y-%m-%d %H:%M-%S")
+
         history.insert(0, {
             "target_lang": lang,
             "original_text": text,
             "translated_text": translated,
             "audio_file": filename,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            "timestamp": current_time
         })
 
         results.append({
@@ -421,7 +427,7 @@ def buy_plan():
     c.setFont("Helvetica", 10)
     y = height - 100
 
-    ist=ptz.timezone("Asia/Kolkata")
+    ist=pytz.timezone("Asia/Kolkata")
     current_time = datetime.now(ist).strftime("%Y-%m-%d %H:%M-%S")
 
     details = [
