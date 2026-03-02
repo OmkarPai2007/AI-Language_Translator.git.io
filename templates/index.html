@@ -87,20 +87,46 @@ body {
 </div>
 </div>
 
-<!-- LIMIT MODAL -->
-<div id="limitModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-60 z-50 flex justify-center items-center" style="display:none;">
-<div class="bg-white p-8 rounded-2xl max-w-lg w-11/12 text-center shadow-lg">
-<h2 class="text-2xl font-bold text-black mb-4">🚫 Free Limit Reached</h2>
-<p class="text-gray-700 mb-6">Choose a plan to unlock more translations</p>
+  <!-- LIMIT MODAL (NO PRICES, BACKEND CONTROLLED) -->
+<div id="limitModal" 
+     class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-60 z-50 flex justify-center items-center hidden">
 
-<div class="flex flex-wrap justify-center gap-4">
-<button onclick="buyPlan(5)" class="px-4 py-2 bg-blue-600 text-white rounded-full">5 Credits</button>
-<button onclick="buyPlan(10)" class="px-4 py-2 bg-green-600 text-white rounded-full">10 Credits</button>
-<button onclick="buyPlan(15)" class="px-4 py-2 bg-orange-500 text-white rounded-full">15 Credits</button>
-</div>
+  <div class="bg-white p-8 rounded-2xl max-w-lg w-11/12 text-center shadow-lg">
+    
+    <h2 class="text-2xl font-bold text-black mb-4">
+      🚫 Translation Limit Reached
+    </h2>
 
-<button onclick="closeModal()" class="mt-6 underline text-gray-600">Close</button>
-</div>
+    <p class="text-gray-700 mb-6">
+      You have reached your free translation limit.
+      Please choose a plan to continue.
+    </p>
+
+    <div class="flex flex-wrap justify-center gap-4">
+      
+      <button onclick="buyPlan(5)"
+              class="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700">
+        🔓 Add 5 Credits
+      </button>
+
+      <button onclick="buyPlan(10)"
+              class="px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700">
+        ✨ Add 10 Credits
+      </button>
+
+      <button onclick="buyPlan(15)"
+              class="px-4 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600">
+        🚀 Add 15 Credits
+      </button>
+
+    </div>
+
+    <button onclick="closeModal()" 
+            class="mt-6 text-sm underline text-gray-600 hover:text-black">
+      Maybe later
+    </button>
+
+  </div>
 </div>
 
 <script>
