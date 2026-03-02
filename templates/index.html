@@ -32,6 +32,7 @@
     }
   </style>
 </head>
+
 <body>
 
 <div class="min-h-screen flex flex-col items-center justify-center px-4 py-10">
@@ -88,7 +89,7 @@
 
     <div id="feedback" class="text-yellow-300"></div>
 
-    <audio id="audioPlayback" controls class="hidden w-full"></audio>
+    <audio id="audioPlayback" controls class="hidden w-full mt-4"></audio>
 
     <div class="flex justify-center gap-4 mt-4">
       <a href="/history" class="px-4 py-2 bg-purple-600 rounded-xl">🕓 History</a>
@@ -101,6 +102,7 @@
 </div>
 
 <script>
+
 const languages = {
   en:'English', hi:'Hindi', mr:'Marathi', kn:'Kannada',
   gu:'Gujarati', ml:'Malayalam', de:'German', fr:'French',
@@ -110,6 +112,8 @@ const languages = {
 const speechLangSelect = document.getElementById("speechLang");
 const translateLangSelect = document.getElementById("language");
 const multiLangSelect = document.getElementById("multiLangSelect");
+const feedback = document.getElementById("feedback");
+const audioPlayer = document.getElementById("audioPlayback");
 
 for (const [code,name] of Object.entries(languages)) {
   speechLangSelect.add(new Option(name, code));
@@ -117,30 +121,118 @@ for (const [code,name] of Object.entries(languages)) {
   multiLangSelect.add(new Option(name, code));
 }
 
-/* ===== THIS IS THE IMPORTANT FIX ===== */
 new TomSelect('#speechLang');
 new TomSelect('#language');
-new TomSelect('#multiLangSelect');  // ← MULTI FIXED HERE
-/* ===================================== */
+new TomSelect('#multiLangSelect');
 
-function buyPlan(extraMessages){
-  fetch("/buy-plan",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({messages:extraMessages})
-  })
-  .then(res=>res.json())
-  .then(data=>{
-    if(data.receipt_url){
-      const link=document.createElement("a");
-      link.href=data.receipt_url;
-      link.download="";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  });
+
+/* Speech */
+function startRecognition() {
+  if (!("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+    feedback.textContent = "Speech recognition not supported.";
+    return;
+  }
+
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = speechLangSelect.value;
+
+  recognition.onresult = (e) => {
+    document.getElementById("inputText").value = e.results[0][0].transcript;
+    feedback.textContent = "✅ Speech recognized!";
+  };
+
+  recognition.start();
 }
+
+
+/* Single Translate */
+async function translateText() {
+  const text = document.getElementById("inputText").value.trim();
+  const language = translateLangSelect.value;
+  const playAudio = document.getElementById("playAudio").checked;
+
+  if (!text) {
+    feedback.textContent = "⚠️ Please enter text.";
+    return;
+  }
+
+  feedback.textContent = "⏳ Translating...";
+
+  try {
+    const res = await fetch("/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `text=${encodeURIComponent(text)}&language=${language}&playAudio=${playAudio}`
+    });
+
+    const data = await res.json();
+
+    document.getElementById("multi-result").innerHTML = `
+      <div class="bg-white bg-opacity-10 rounded-lg p-4">
+        <p><strong>Original:</strong> ${text}</p>
+        <p><strong>Translated:</strong> ${data.translated}</p>
+      </div>
+    `;
+
+    if (data.audio_path && playAudio) {
+      audioPlayer.src = data.audio_path + "?t=" + Date.now();
+      audioPlayer.classList.remove("hidden");
+      audioPlayer.play();
+    }
+
+    feedback.textContent = "✅ Translation complete!";
+
+  } catch (err) {
+    feedback.textContent = "❌ Translation failed.";
+  }
+}
+
+
+/* Multi Translate */
+async function translateSelected() {
+  const text = document.getElementById("inputText").value.trim();
+  const selected = Array.from(multiLangSelect.selectedOptions).map(opt => opt.value);
+  const playAudio = document.getElementById("playAudio").checked;
+
+  if (!text || selected.length === 0) {
+    feedback.textContent = "⚠️ Enter text and select languages.";
+    return;
+  }
+
+  feedback.textContent = "🌐 Translating...";
+  document.getElementById("multi-result").innerHTML = "";
+
+  try {
+    const res = await fetch("/translate-multi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, languages: selected, playAudio })
+    });
+
+    const data = await res.json();
+
+    if (data.limit_reached) {
+      alert("Free limit reached. Please purchase a plan.");
+      return;
+    }
+
+    data.translations.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "bg-white bg-opacity-10 rounded-lg p-4 mt-2";
+      div.innerHTML = `
+        <p><strong>${languages[item.language]}</strong></p>
+        <p>${item.translated_text}</p>
+      `;
+      document.getElementById("multi-result").appendChild(div);
+    });
+
+    feedback.textContent = "✅ Multi-language translation complete!";
+
+  } catch (err) {
+    feedback.textContent = "❌ Multi translation failed.";
+  }
+}
+
 </script>
 
 </body>
