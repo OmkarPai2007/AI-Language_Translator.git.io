@@ -7,6 +7,7 @@ import time
 import uuid
 import atexit
 import re
+import pytz
 from urllib.parse import urlparse
 
 from flask import (
@@ -25,6 +26,7 @@ from werkzeug.utils import secure_filename
 from huggingface_hub import InferenceClient
 import google.generativeai as genai
 from authlib.integrations.flask_client import OAuth
+from datetime import datetime
 
 # ============================================================
 # LOAD ENVIRONMENT VARIABLES
@@ -419,12 +421,15 @@ def buy_plan():
     c.setFont("Helvetica", 10)
     y = height - 100
 
+    ist=ptz.timezone("Asia/Kolkata")
+    current_time = datetime.now(ist).strftime("%Y-%m-%d %H:%M-%S")
+
     details = [
         f"Name of Purchaser: {full_name}",
         f"Email Address: {email}",
         f"Plan Purchased: {extra_messages} Translation Credits",
         f"Plan Price: {plan_price}",
-        f"Date: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Date: {current_time}",
         f"Receipt ID: {uuid.uuid4()}",
     ]
 
