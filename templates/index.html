@@ -159,18 +159,52 @@ new TomSelect('#speechLang');
 new TomSelect('#language');
 new TomSelect('#multiLangSelect');
 
-#translatetext()
+async function translateText() {
+const text=document.getElementById("inputText").value.trim();
+const language=translateLangSelect.value;
+const playAudio=document.getElementById("playAudio").checked;
+
+if(!text){
+feedback.textContent="⚠️ Enter text";
+return;
+}
+
+const res=await fetch('/translate',{
+method:'POST',
+headers:{'Content-Type':'application/x-www-form-urlencoded'},
+body:`text=${encodeURIComponent(text)}&language=${language}&playAudio=${playAudio}`
+});
+
+const data=await res.json();
+
+document.getElementById("multi-result").innerHTML=`
+<div class="bg-white bg-opacity-10 p-4 rounded">
+<p><strong>Original:</strong> ${text}</p>
+<p><strong>Translated:</strong> ${data.translated}</p>
+</div>
+`;
+
+if(data.audio_path && playAudio){
+audioPlayer.src=data.audio_path+"?t="+Date.now();
+audioPlayer.classList.remove("hidden");
+audioPlayer.play();
+}
+
+feedback.textContent="✅ Translation complete!";
+}
 
 async function translateSelected(){
 const text=document.getElementById("inputText").value.trim();
 const selected=Array.from(multiLangSelect.selectedOptions).map(o=>o.value);
 const playAudio=document.getElementById("playAudio").checked;
+const output=document.getElementById("multi-result");
 
 if(!text||selected.length===0){
 feedback.textContent="⚠️ Enter text & select languages";
 return;
 }
 
+output.innerHTML="";
 const res=await fetch('/translate-multi',{
 method:'POST',
 headers:{'Content-Type':'application/json'},
@@ -181,14 +215,32 @@ const data=await res.json();
 
 if(!res.ok){
 if(data.limit_reached){
-document.getElementById("limitModal").style.display="flex";
+document.getElementById("limitModal").classList.remove("hidden");
 return;
 }
 feedback.textContent="❌ "+data.error;
 return;
 }
 
-feedback.textContent="✅ Translation complete!";
+data.translations.forEach(item=>{
+const div=document.createElement("div");
+div.className="bg-white bg-opacity-10 p-4 rounded mb-3";
+div.innerHTML=`
+<p><strong>Original:</strong> ${text}</p>
+<p><strong>${languages[item.language]}:</strong> ${item.translated_text}</p>
+`;
+
+if(item.audio_path && playAudio){
+const audio=document.createElement("audio");
+audio.controls=true;
+audio.src=item.audio_path+"?t="+Date.now();
+div.appendChild(audio);
+}
+
+output.appendChild(div);
+});
+
+feedback.textContent="✅ Multi Translation complete!";
 }
  
 function buyPlan(extraMessages){
