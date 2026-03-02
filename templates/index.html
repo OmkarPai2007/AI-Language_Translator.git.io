@@ -8,7 +8,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
-
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
@@ -26,6 +25,44 @@ body {
 }
 .neon-text {
   text-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff, 0 0 20px #00f7ff;
+}
+
+/* Mic Animation */
+.mic-btn {
+  transition: all 0.3s ease;
+}
+.mic-active {
+  animation: pulse 1s infinite;
+  background-color: #16a34a !important;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+  70% { box-shadow: 0 0 0 20px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+/* Sound Wave */
+.wave {
+  display: none;
+  height: 30px;
+  margin-top: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+.wave span {
+  width: 5px;
+  height: 10px;
+  background: #22c55e;
+  animation: waveAnim 1s infinite ease-in-out;
+}
+.wave span:nth-child(2) { animation-delay: .2s; }
+.wave span:nth-child(3) { animation-delay: .4s; }
+.wave span:nth-child(4) { animation-delay: .6s; }
+
+@keyframes waveAnim {
+  0%,100% { height: 10px; }
+  50% { height: 30px; }
 }
 </style>
 </head>
@@ -51,9 +88,13 @@ body {
 
 <textarea id="inputText" rows="3" class="w-full p-2 rounded text-black" placeholder="Type or speak here..."></textarea>
 
-<button onclick="startRecognition()" class="px-4 py-2 bg-green-600 rounded-xl">
-🎤 Start Speech Recognition
+<button id="micButton" onclick="startRecognition()" class="mic-btn px-4 py-2 bg-green-600 rounded-xl flex items-center gap-2">
+🎤 <span id="micText">Start Speech Recognition</span>
 </button>
+
+<div id="waveAnimation" class="wave flex">
+<span></span><span></span><span></span><span></span>
+</div>
 
 <label class="flex items-center space-x-2">
 <input type="checkbox" id="playAudio" checked />
@@ -95,7 +136,7 @@ body {
 </div>
 </div>
 
-<!-- PREMIUM LIMIT MODAL -->
+<!-- PREMIUM LIMIT MODAL (UNCHANGED) -->
 <div id="limitModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-60 z-50 flex justify-center items-center" style="display:none;">
 <div class="bg-white p-8 rounded-2xl max-w-lg w-11/12 text-center shadow-lg relative">
 <h2 class="text-2xl font-bold text-black mb-4">🚫 Free Limit Reached</h2>
@@ -127,130 +168,47 @@ body {
 
 <script>
 
-const languages = {
-en:'English', hi:'Hindi', mr:'Marathi', kn:'Kannada',
-gu:'Gujarati', ml:'Malayalam', de:'German', fr:'French',
-es:'Spanish', ja:'Japanese'
+// === SPEECH RECOGNITION ===
+function startRecognition() {
+
+if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+alert("Speech Recognition not supported. Use Chrome.");
+return;
+}
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+
+const micButton = document.getElementById("micButton");
+const micText = document.getElementById("micText");
+const wave = document.getElementById("waveAnimation");
+const feedback = document.getElementById("feedback");
+
+recognition.lang = document.getElementById("speechLang").value;
+
+recognition.start();
+
+micButton.classList.add("mic-active");
+micText.textContent = "Listening...";
+wave.style.display = "flex";
+feedback.textContent = "🎙️ Listening...";
+
+recognition.onresult = function(event) {
+document.getElementById("inputText").value =
+event.results[0][0].transcript;
 };
 
-const speechLangSelect = document.getElementById("speechLang");
-const translateLangSelect = document.getElementById("language");
-const multiLangSelect = document.getElementById("multiLangSelect");
-const feedback = document.getElementById("feedback");
-const audioPlayer = document.getElementById("audioPlayback");
+recognition.onend = function() {
+micButton.classList.remove("mic-active");
+micText.textContent = "Start Speech Recognition";
+wave.style.display = "none";
+feedback.textContent = "✅ Speech captured!";
+};
 
-for (const [code,name] of Object.entries(languages)) {
-speechLangSelect.add(new Option(name, code));
-translateLangSelect.add(new Option(name, code));
-multiLangSelect.add(new Option(name, code));
-}
+recognition.onerror = function(event){
+feedback.textContent = "⚠️ Error: " + event.error;
+};
 
-new TomSelect('#speechLang');
-new TomSelect('#language');
-new TomSelect('#multiLangSelect');
-
-/* SINGLE TRANSLATE */
-async function translateText(){
-const text=document.getElementById("inputText").value.trim();
-const language=translateLangSelect.value;
-const playAudio=document.getElementById("playAudio").checked;
-
-if(!text){
-feedback.textContent="⚠️ Please enter text.";
-return;
-}
-
-const res=await fetch("/translate",{
-method:"POST",
-headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:`text=${encodeURIComponent(text)}&language=${language}&playAudio=${playAudio}`
-});
-
-const data=await res.json();
-
-document.getElementById("multi-result").innerHTML=`
-<div class="bg-white bg-opacity-10 p-4 rounded-lg">
-<p><strong>Original:</strong> ${text}</p>
-<p><strong>Translated:</strong> ${data.translated}</p>
-</div>
-`;
-
-if(data.audio_path && playAudio){
-audioPlayer.src=data.audio_path+"?t="+Date.now();
-audioPlayer.classList.remove("hidden");
-audioPlayer.play();
-}
-
-feedback.textContent="✅ Translation complete!";
-}
-
-/* MULTI TRANSLATE */
-async function translateSelected(){
-const text=document.getElementById("inputText").value.trim();
-const selected=Array.from(multiLangSelect.selectedOptions).map(o=>o.value);
-const playAudio=document.getElementById("playAudio").checked;
-
-if(!text || selected.length===0){
-feedback.textContent="⚠️ Enter text and select languages.";
-return;
-}
-
-audioPlayer.classList.add("hidden");
-audioPlayer.src="";
-document.getElementById("multi-result").innerHTML="";
-
-const res=await fetch("/translate-multi",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({text,languages:selected,playAudio})
-});
-
-const data=await res.json();
-
-if(data.limit_reached){
-document.getElementById("limitModal").style.display="flex";
-return;
-}
-
-data.translations.forEach(item=>{
-const div=document.createElement("div");
-div.className="bg-white bg-opacity-10 p-4 rounded-lg mt-3";
-div.innerHTML=`
-<p class="font-semibold text-lg">${languages[item.language]}</p>
-<p><strong>Translated:</strong> ${item.translated_text}</p>
-`;
-
-if(item.audio_path && playAudio){
-const audio=document.createElement("audio");
-audio.controls=true;
-audio.src=item.audio_path+"?t="+Date.now();
-audio.className="mt-2 w-full";
-div.appendChild(audio);
-}
-
-document.getElementById("multi-result").appendChild(div);
-});
-
-feedback.textContent="✅ Multi-language translation complete!";
-}
-
-function closeModal(){
-document.getElementById("limitModal").style.display="none";
-}
-
-function buyPlan(extraMessages){
-fetch("/buy-plan",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({messages:extraMessages})
-})
-.then(res=>res.json())
-.then(data=>{
-if(data.receipt_url){
-window.open(data.receipt_url,"_blank");
-}
-closeModal();
-});
 }
 
 </script>
