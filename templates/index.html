@@ -84,6 +84,13 @@ body {
 
 <audio id="audioPlayback" controls class="w-full mt-4 hidden"></audio>
 
+  <div class="flex flex-wrap ustify-center gap-4 mt-4">
+    <a href="/history" class="px-4 py-2 bg-purple-600 rounded-xl">🕑 History</a>
+    <a href="/image-gen" class="px-4 py-2 bg-purple-600 rounded-xl">🖼️ Text to Image</a>
+    <a href="/image-analyze" class="px-4 py-2 bg-purple-600 rounded-xl">👁️ Image to text</a>
+    <a href="/history" class="px-4 py-2 bg-purple-600 rounded-xl">💬 Chatbot</a>
+  </div>
+
 </div>
 </div>
 
@@ -151,6 +158,8 @@ multiLangSelect.add(new Option(`${name} [${code}]`,code));
 new TomSelect('#speechLang');
 new TomSelect('#language');
 new TomSelect('#multiLangSelect');
+
+#translatetext()
 
 async function translateSelected(){
 const text=document.getElementById("inputText").value.trim();
