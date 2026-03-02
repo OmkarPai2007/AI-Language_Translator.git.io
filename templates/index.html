@@ -8,8 +8,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
 <style>
 body {
@@ -18,51 +16,15 @@ body {
   background-size: cover;
   color: white;
 }
+
 .glass {
   backdrop-filter: blur(10px);
   background-color: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.15);
 }
+
 .neon-text {
   text-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff, 0 0 20px #00f7ff;
-}
-
-/* Mic Animation */
-.mic-btn {
-  transition: all 0.3s ease;
-}
-.mic-active {
-  animation: pulse 1s infinite;
-  background-color: #16a34a !important;
-}
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
-  70% { box-shadow: 0 0 0 20px rgba(34,197,94,0); }
-  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-}
-
-/* Sound Wave */
-.wave {
-  display: none;
-  height: 30px;
-  margin-top: 10px;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-}
-.wave span {
-  width: 5px;
-  height: 10px;
-  background: #22c55e;
-  animation: waveAnim 1s infinite ease-in-out;
-}
-.wave span:nth-child(2) { animation-delay: .2s; }
-.wave span:nth-child(3) { animation-delay: .4s; }
-.wave span:nth-child(4) { animation-delay: .6s; }
-
-@keyframes waveAnim {
-  0%,100% { height: 10px; }
-  50% { height: 30px; }
 }
 </style>
 </head>
@@ -82,19 +44,16 @@ body {
 <p class="text-md text-cyan-200 mt-2">Speak, Translate & Hear AI in Action</p>
 </header>
 
+<!-- Speech -->
 <section class="space-y-4">
 <label class="font-semibold">Speech Language:</label>
-<select id="speechLang" class="text-black w-full"></select>
+<select id="speechLang" class="text-black w-full p-2 rounded"></select>
 
 <textarea id="inputText" rows="3" class="w-full p-2 rounded text-black" placeholder="Type or speak here..."></textarea>
 
-<button id="micButton" onclick="startRecognition()" class="mic-btn px-4 py-2 bg-green-600 rounded-xl flex items-center gap-2">
-🎤 <span id="micText">Start Speech Recognition</span>
+<button onclick="startRecognition()" class="px-4 py-2 bg-green-600 rounded-xl">
+🎤 Start Speech Recognition
 </button>
-
-<div id="waveAnimation" class="wave flex">
-<span></span><span></span><span></span><span></span>
-</div>
 
 <label class="flex items-center space-x-2">
 <input type="checkbox" id="playAudio" checked />
@@ -102,15 +61,17 @@ body {
 </label>
 </section>
 
+<!-- Single Translate -->
 <section class="space-y-4">
 <label class="font-semibold">Translate to:</label>
-<select id="language" class="text-black w-full"></select>
+<select id="language" class="text-black w-full p-2 rounded"></select>
 
 <button onclick="translateText()" class="px-4 py-2 bg-blue-600 rounded-xl">
 🌍 Translate
 </button>
 </section>
 
+<!-- Multi Translate -->
 <section class="space-y-4">
 <label class="font-semibold">Translate to (Multiple):</label>
 <select id="multiLangSelect" multiple size="6" class="w-full p-2 rounded text-black"></select>
@@ -136,7 +97,7 @@ body {
 </div>
 </div>
 
-<!-- PREMIUM LIMIT MODAL (UNCHANGED) -->
+<!-- PREMIUM LIMIT MODAL -->
 <div id="limitModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-60 z-50 flex justify-center items-center" style="display:none;">
 <div class="bg-white p-8 rounded-2xl max-w-lg w-11/12 text-center shadow-lg relative">
 <h2 class="text-2xl font-bold text-black mb-4">🚫 Free Limit Reached</h2>
@@ -168,48 +129,64 @@ body {
 
 <script>
 
-// === SPEECH RECOGNITION ===
-function startRecognition() {
+const languages = {
+en:'English', hi:'Hindi', mr:'Marathi', kn:'Kannada',
+gu:'Gujarati', ml:'Malayalam', de:'German', fr:'French',
+es:'Spanish', ja:'Japanese'
+};
 
-if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-alert("Speech Recognition not supported. Use Chrome.");
-return;
-}
-
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = new SpeechRecognition();
-
-const micButton = document.getElementById("micButton");
-const micText = document.getElementById("micText");
-const wave = document.getElementById("waveAnimation");
+const speechLangSelect = document.getElementById("speechLang");
+const translateLangSelect = document.getElementById("language");
+const multiLangSelect = document.getElementById("multiLangSelect");
 const feedback = document.getElementById("feedback");
+const audioPlayer = document.getElementById("audioPlayback");
 
-recognition.lang = document.getElementById("speechLang").value;
-
-recognition.start();
-
-micButton.classList.add("mic-active");
-micText.textContent = "Listening...";
-wave.style.display = "flex";
-feedback.textContent = "🎙️ Listening...";
-
-recognition.onresult = function(event) {
-document.getElementById("inputText").value =
-event.results[0][0].transcript;
-};
-
-recognition.onend = function() {
-micButton.classList.remove("mic-active");
-micText.textContent = "Start Speech Recognition";
-wave.style.display = "none";
-feedback.textContent = "✅ Speech captured!";
-};
-
-recognition.onerror = function(event){
-feedback.textContent = "⚠️ Error: " + event.error;
-};
-
+for (const [code,name] of Object.entries(languages)) {
+speechLangSelect.add(new Option(name, code));
+translateLangSelect.add(new Option(name, code));
+multiLangSelect.add(new Option(name, code));
 }
+
+/* PARTICLE BACKGROUND */
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+canvas.style.position="fixed";
+canvas.style.top=0;
+canvas.style.left=0;
+canvas.style.width="100%";
+canvas.style.height="100%";
+canvas.style.zIndex="-1";
+document.body.insertBefore(canvas, document.body.firstChild);
+
+let particles=[];
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+for(let i=0;i<100;i++){
+particles.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+r:Math.random()*2+1,
+dx:(Math.random()-0.5)*1.5,
+dy:(Math.random()-0.5)*1.5
+});
+}
+
+function animate(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+particles.forEach(p=>{
+p.x+=p.dx;
+p.y+=p.dy;
+if(p.x<0||p.x>canvas.width) p.dx*=-1;
+if(p.y<0||p.y>canvas.height) p.dy*=-1;
+ctx.beginPath();
+ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+ctx.fillStyle="rgba(0,247,255,0.7)";
+ctx.fill();
+});
+requestAnimationFrame(animate);
+}
+animate();
 
 </script>
 
