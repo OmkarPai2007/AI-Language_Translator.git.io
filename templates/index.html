@@ -6,8 +6,9 @@
 <title>AI-Language Translator</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
 <style>
 body {
@@ -19,8 +20,8 @@ body {
 
 .glass {
   backdrop-filter: blur(10px);
-  background-color: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.15);
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .neon-text {
@@ -28,7 +29,6 @@ body {
 }
 </style>
 </head>
-
 <body>
 
 <div class="min-h-screen flex flex-col items-center justify-center px-4 py-10">
@@ -44,125 +44,161 @@ body {
 <p class="text-md text-cyan-200 mt-2">Speak, Translate & Hear AI in Action</p>
 </header>
 
-<!-- Speech -->
 <section class="space-y-4">
-<label class="font-semibold">Speech Language:</label>
-<select id="speechLang" class="text-black w-full p-2 rounded"></select>
+<label class="block text-lg font-semibold">Speech Language:</label>
+<select id="speechLang" class="text-black px-2 py-1 rounded w-full"></select>
 
 <textarea id="inputText" rows="3" class="w-full p-2 rounded text-black" placeholder="Type or speak here..."></textarea>
 
-<button onclick="startRecognition()" class="px-4 py-2 bg-green-600 rounded-xl">
+<button onclick="startRecognition()" class="px-4 py-2 bg-green-600 text-white rounded-xl">
 🎤 Start Speech Recognition
 </button>
 
-<label class="flex items-center space-x-2">
+<label class="flex items-center space-x-3">
 <input type="checkbox" id="playAudio" checked />
 <span>🎧 Play Audio</span>
 </label>
 </section>
 
-<!-- Single Translate -->
 <section class="space-y-4">
-<label class="font-semibold">Translate to:</label>
-<select id="language" class="text-black w-full p-2 rounded"></select>
+<label class="block text-lg font-semibold">Translate to:</label>
+<select id="language" class="text-black px-2 py-1 rounded w-full"></select>
 
-<button onclick="translateText()" class="px-4 py-2 bg-blue-600 rounded-xl">
+<button onclick="translateText()" class="px-4 py-2 bg-blue-600 text-white rounded-xl">
 🌍 Translate
 </button>
 </section>
 
-<!-- Multi Translate -->
 <section class="space-y-4">
-<label class="font-semibold">Translate to (Multiple):</label>
-<select id="multiLangSelect" multiple class="w-full p-2 rounded text-black"></select>
+<label class="block text-lg font-semibold">Translate to (Multiple):</label>
+<select id="multiLangSelect" multiple class="w-full p-2 rounded bg-gray-800 text-white"></select>
 
-<button onclick="translateSelected()" class="px-4 py-2 bg-green-600 rounded-xl">
+<button onclick="translateSelected()" class="px-4 py-2 bg-green-600 text-white rounded-xl">
 🌐 Translate Selected
 </button>
 
-<div id="multi-result"></div>
+<div id="multi-result" class="space-y-4 text-white"></div>
 </section>
 
-<div id="feedback" class="text-yellow-300"></div>
+<div id="feedback" class="text-center text-yellow-300 text-sm min-h-[20px]"></div>
 
-<audio id="audioPlayback" controls class="hidden w-full mt-4"></audio>
-
-<div class="flex justify-center gap-4 mt-4">
-<a href="/history" class="px-4 py-2 bg-purple-600 rounded-xl">🕓 History</a>
-<a href="/image-gen" class="px-4 py-2 bg-purple-600 rounded-xl">🖼️ Text to Image</a>
-<a href="/image-analyze" class="px-4 py-2 bg-purple-600 rounded-xl">👁️ Image to Text</a>
-<a href="/chatbot" class="px-4 py-2 bg-purple-600 rounded-xl">💬 Chatbot</a>
-</div>
+<audio id="audioPlayback" controls class="w-full mt-4 hidden"></audio>
 
 </div>
 </div>
 
-<!-- PREMIUM LIMIT MODAL -->
+<!-- LIMIT MODAL -->
 <div id="limitModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-60 z-50 flex justify-center items-center" style="display:none;">
-<div class="bg-white p-8 rounded-2xl max-w-lg w-11/12 text-center shadow-lg relative">
+<div class="bg-white p-8 rounded-2xl max-w-lg w-11/12 text-center shadow-lg">
 <h2 class="text-2xl font-bold text-black mb-4">🚫 Free Limit Reached</h2>
-<p class="text-gray-700 mb-6">Choose a plan to unlock more multi-language translations!</p>
+<p class="text-gray-700 mb-6">Choose a plan to unlock more translations</p>
 
 <div class="flex flex-wrap justify-center gap-4">
-<div class="bg-gray-100 p-4 rounded-lg border-2 border-blue-500 flex-grow">
-<h3 class="text-blue-600 text-lg font-semibold">🔓 5 Extra Translations</h3>
-<p class="text-sm text-gray-500">₹49</p>
-<button class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-full" onclick="buyPlan(5)">Buy Now</button>
+<button onclick="buyPlan(5)" class="px-4 py-2 bg-blue-600 text-white rounded-full">5 Credits</button>
+<button onclick="buyPlan(10)" class="px-4 py-2 bg-green-600 text-white rounded-full">10 Credits</button>
+<button onclick="buyPlan(15)" class="px-4 py-2 bg-orange-500 text-white rounded-full">15 Credits</button>
 </div>
 
-<div class="bg-gray-100 p-4 rounded-lg border-2 border-green-500 flex-grow">
-<h3 class="text-green-600 text-lg font-semibold">✨ 10 Extra Translations</h3>
-<p class="text-sm text-gray-500">₹79</p>
-<button class="mt-2 px-4 py-2 bg-green-600 text-white rounded-full" onclick="buyPlan(10)">Buy Now</button>
-</div>
-
-<div class="bg-gray-100 p-4 rounded-lg border-2 border-orange-500 flex-grow">
-<h3 class="text-orange-600 text-lg font-semibold">🚀 15 Extra Translations</h3>
-<p class="text-sm text-gray-500">₹99</p>
-<button class="mt-2 px-4 py-2 bg-orange-500 text-white rounded-full" onclick="buyPlan(15)">Buy Now</button>
-</div>
-</div>
-
-<button onclick="closeModal()" class="mt-6 text-sm underline text-gray-600">Maybe later</button>
+<button onclick="closeModal()" class="mt-6 underline text-gray-600">Close</button>
 </div>
 </div>
 
 <script>
-
 const languages = {
-en:'English', hi:'Hindi', mr:'Marathi', kn:'Kannada',
-gu:'Gujarati', ml:'Malayalam', de:'German', fr:'French',
-es:'Spanish', ja:'Japanese'
+'en':'English','hi':'Hindi','mr':'Marathi','kn':'Kannada',
+'gu':'Gujarati','ml':'Malayalam','de':'German','fr':'French',
+'es':'Spanish','ja':'Japanese'
 };
 
-const speechLangSelect = document.getElementById("speechLang");
-const translateLangSelect = document.getElementById("language");
-const multiLangSelect = document.getElementById("multiLangSelect");
-const feedback = document.getElementById("feedback");
-const audioPlayer = document.getElementById("audioPlayback");
+const speechLangSelect=document.getElementById("speechLang");
+const translateLangSelect=document.getElementById("language");
+const multiLangSelect=document.getElementById("multiLangSelect");
+const feedback=document.getElementById("feedback");
+const audioPlayer=document.getElementById("audioPlayback");
 
-for (const [code,name] of Object.entries(languages)) {
-speechLangSelect.add(new Option(name, code));
-translateLangSelect.add(new Option(name, code));
-multiLangSelect.add(new Option(name, code));
+for(const [code,name] of Object.entries(languages)){
+speechLangSelect.add(new Option(`${name} [${code}]`,code));
+translateLangSelect.add(new Option(`${name} [${code}]`,code));
+multiLangSelect.add(new Option(`${name} [${code}]`,code));
+}
+
+new TomSelect('#speechLang');
+new TomSelect('#language');
+new TomSelect('#multiLangSelect');
+
+async function translateSelected(){
+const text=document.getElementById("inputText").value.trim();
+const selected=Array.from(multiLangSelect.selectedOptions).map(o=>o.value);
+const playAudio=document.getElementById("playAudio").checked;
+
+if(!text||selected.length===0){
+feedback.textContent="⚠️ Enter text & select languages";
+return;
+}
+
+const res=await fetch('/translate-multi',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({text,languages:selected,playAudio})
+});
+
+const data=await res.json();
+
+if(!res.ok){
+if(data.limit_reached){
+document.getElementById("limitModal").style.display="flex";
+return;
+}
+feedback.textContent="❌ "+data.error;
+return;
+}
+
+feedback.textContent="✅ Translation complete!";
+}
+ 
+function buyPlan(extraMessages){
+fetch("/buy-plan",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({messages:extraMessages})
+})
+.then(res=>res.json())
+.then(data=>{
+document.getElementById("limitModal").style.display="none";
+
+if(data.receipt_url){
+const link=document.createElement("a");
+link.href=data.receipt_url;
+link.download="receipt.pdf";
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+}
+});
+}
+
+function closeModal(){
+document.getElementById("limitModal").style.display="none";
 }
 
 /* PARTICLE BACKGROUND */
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.createElement("canvas");
+const ctx=canvas.getContext("2d");
 canvas.style.position="fixed";
 canvas.style.top=0;
 canvas.style.left=0;
-canvas.style.width="100%";
-canvas.style.height="100%";
 canvas.style.zIndex="-1";
 canvas.style.pointerEvents="none";
-document.body.insertBefore(canvas, document.body.firstChild);
+document.body.prepend(canvas);
 
-let particles=[];
+function resize(){
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
+}
+window.addEventListener("resize",resize);
+resize();
 
+const particles=[];
 for(let i=0;i<100;i++){
 particles.push({
 x:Math.random()*canvas.width,
@@ -178,8 +214,8 @@ ctx.clearRect(0,0,canvas.width,canvas.height);
 particles.forEach(p=>{
 p.x+=p.dx;
 p.y+=p.dy;
-if(p.x<0||p.x>canvas.width) p.dx*=-1;
-if(p.y<0||p.y>canvas.height) p.dy*=-1;
+if(p.x<0||p.x>canvas.width)p.dx*=-1;
+if(p.y<0||p.y>canvas.height)p.dy*=-1;
 ctx.beginPath();
 ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
 ctx.fillStyle="rgba(0,247,255,0.7)";
@@ -188,84 +224,6 @@ ctx.fill();
 requestAnimationFrame(animate);
 }
 animate();
-
-/* SPEECH RECOGNITION FUNCTION */
-function startRecognition() {
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("Speech recognition not supported in this browser. Use Google Chrome.");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-
-  recognition.lang = document.getElementById("speechLang").value;
-  recognition.interimResults = false;
-  recognition.continuous = false;
-
-  const feedback = document.getElementById("feedback");
-
-  recognition.onstart = () => {
-    feedback.textContent = "🎙 Listening...";
-  };
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    document.getElementById("inputText").value = transcript;
-    feedback.textContent = "✅ Speech captured!";
-  };
-
-  recognition.onerror = (event) => {
-    feedback.textContent = "❌ Error: " + event.error;
-  };
-
-  recognition.onend = () => {
-    if (feedback.textContent === "🎙 Listening...") {
-      feedback.textContent = "⚠️ No speech detected.";
-    }
-  };
-
-  recognition.start();
-}
-
-/* BUY PLAN + FORCE PDF DOWNLOAD */
-function buyPlan(extraMessages){
-
-fetch("/buy-plan",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({messages:extraMessages})
-})
-.then(res=>{
-if(!res.ok){
-return res.json().then(err=>{throw new Error(err.message)});
-}
-return res.json();
-})
-.then(data=>{
-
-// Close modal
-document.getElementById("limitModal").style.display="none";
-
-// Force download PDF
-if(data.receipt_url){
-const link=document.createElement("a");
-link.href=data.receipt_url;
-link.download="receipt.pdf";
-document.body.appendChild(link);
-link.click();
-document.body.removeChild(link);
-}
-
-document.getElementById("feedback").textContent="✅ Plan upgraded successfully!";
-})
-.catch(err=>{
-document.getElementById("feedback").textContent="❌ "+err.message;
-});
-
-}
 </script>
 
 </body>
