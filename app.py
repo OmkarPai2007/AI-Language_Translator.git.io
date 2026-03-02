@@ -72,6 +72,9 @@ def init_db():
         );
     """)
 
+    try:
+        cursor.execute("""ALTER TABLE users2 ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;""")
+
     conn.commit()
     cursor.close()
     conn.close()
