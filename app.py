@@ -176,15 +176,44 @@ def home_redirect():
 def index():
     if not session.get("email"):
         return redirect(url_for("login"))
-    price_map={
+
+    email = session["email"]
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT translation_limit, translation_used, is_admin
+        FROM users2
+        WHERE email=%s
+    """, (email,))
+
+    result = cursor.fetchone()
+
+    if not result:
+        cursor.close()
+        conn.close()
+        return "User not found", 404
+
+    limit, used, is_admin = result
+    remaining = limit - used
+
+    prices = {
         5: "₹49",
-        10:"₹89",
+        10: "₹89",
         15: "₹129"
     }
-    
-    return render_template("index.html",
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "index.html",
         full_name=session["full_name"],
-        email=session["email"]
+        email=email,
+        remaining_credits=remaining,
+        prices=prices,
+        user_is_admin=is_admin
     )
 
 @app.route("/register_page")
