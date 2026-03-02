@@ -529,6 +529,33 @@ def image_gen():
     )
 
 # ============================================================
+# ADMIN DASHBOARD
+# ============================================================
+@app.route("/admin")
+def admin_dashboard():
+    if not session.get("email"):
+        return redirect(url_for("login"))
+
+    if session.get("email") != os.getenv("ADMIN_EMAIL"):
+        return "Unauthorized Access ❌", 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT full_name, email, translation_limit, translation_used
+        FROM users2
+        ORDER BY id DESC
+    """)
+
+    users = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template("admin.html", users=users)
+
+# ============================================================
 # IMAGE TO TEXT
 # ============================================================
 @app.route("/image-analyze", methods=["GET", "POST"])
