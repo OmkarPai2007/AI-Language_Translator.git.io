@@ -31,7 +31,7 @@ body {
 </head>
 <body>
 
-<div class="min-h-screen flex flex-col items-center justify-center px-4 py-10">
+<div class="min-h-screen flex flex-col items-center justify-center px-4 py-10 overflow-auto">
 <div class="w-full max-w-3xl glass rounded-2xl p-8 space-y-6 shadow-2xl">
 
 <div class="w-full px-4 py-2 text-sm text-right text-white bg-black bg-opacity-30">
@@ -250,6 +250,49 @@ ctx.fill();
 requestAnimationFrame(animate);
 }
 animate();
+
+function startRecognition() {
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("Use Google Chrome for Speech Recognition.");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = document.getElementById("speechLang").value;
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  const feedback = document.getElementById("feedback");
+
+  recognition.onstart = () => {
+    feedback.textContent = "🎙 Listening...";
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById("inputText").value = transcript;
+    feedback.textContent = "✅ Speech captured!";
+  };
+
+  recognition.onerror = (event) => {
+    feedback.textContent = "❌ Error: " + event.error;
+    console.error(event);
+  };
+
+  recognition.onend = () => {
+    console.log("Recognition ended");
+  };
+
+  try {
+    recognition.start();
+  } catch (err) {
+    console.error(err);
+  }
+}
+  
 </script>
 
 </body>
