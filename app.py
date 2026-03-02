@@ -60,6 +60,9 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
 
+    # ------------------------------------------------------------
+    # CREATE TABLE
+    # ------------------------------------------------------------
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users2 (
             id SERIAL PRIMARY KEY,
@@ -72,8 +75,43 @@ def init_db():
         );
     """)
 
+    # ------------------------------------------------------------
+    # ADD is_admin COLUMN IF NOT EXISTS
+    # ------------------------------------------------------------
+    cursor.execute("""
+        ALTER TABLE users2 
+        ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
+    """)
+
+    # ------------------------------------------------------------
+    # CREATE DEFAULT ADMIN FROM ENV VARIABLES
+    # ------------------------------------------------------------
     try:
-        cursor.execute("""ALTER TABLE users2 ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;""")
+        admin_name = os.getenv("DEFAULT_ADMIN_NAME")
+        admin_email = os.getenv("DEFAULT_ADMIN_EMAIL")
+        admin_password = os.getenv("DEFAULT_ADMIN_PASSWORD")
+
+        if admin_email and admin_password:
+            cursor.execute("SELECT id FROM users2 WHERE email=%s", (admin_email,))
+            admin_exists = cursor.fetchone()
+
+            if not admin_exists:
+                cursor.execute("""
+                    INSERT INTO users2 
+                    (full_name, email, pass, translation_limit, translation_used, is_admin)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (
+                    admin_name,
+                    admin_email,
+                    admin_password,
+                    1000,
+                    0,
+                    True
+                ))
+                print("Default Admin Created ✅")
+
+    except Exception as e:
+        print("Admin creation error:", e)
 
     conn.commit()
     cursor.close()
