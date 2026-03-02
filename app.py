@@ -67,7 +67,8 @@ def init_db():
             email VARCHAR(255) UNIQUE,
             pass VARCHAR(255),
             translation_limit INT DEFAULT 3,
-            translation_used INT DEFAULT 0
+            translation_used INT DEFAULT 0,
+            is_admin BOOLEAN DEFAULT FALSE
         );
     """)
 
