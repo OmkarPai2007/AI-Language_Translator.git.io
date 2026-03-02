@@ -36,6 +36,12 @@ body {
 
 <div class="w-full px-4 py-2 text-sm text-right text-white bg-black bg-opacity-30">
 👤 Logged in as: <strong>{{ full_name }}</strong> ({{ email }})
+</div>
+
+<div class="bg-green-600 px-3 py-1 rounded-full text-white font-semibold">
+💳 Credits Left: {{ remaining_credits }}
+</div>
+
 <a href="/logout" class="ml-4 text-red-300 underline hover:text-red-100">Logout</a>
 </div>
 
