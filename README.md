@@ -4,7 +4,7 @@ Project by
 
 [Omkar Pai] (https://github.com/OmkarPai2007)
 
-This Is an AI language translator, Image generator and analyzer which is made for college project
+This Is an AI language translator, Image generator and Image analyzer with a Chatbot which is made for college project.
 
 Commands to push code in Git-Hub
 
