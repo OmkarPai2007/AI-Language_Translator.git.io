@@ -60,6 +60,7 @@ body.auth-body {
   padding: 14px 16px;
   border-radius: 30px;
   border: 1px solid rgba(200, 150, 120, 0.3);
+  flex-direction: column;
 }
 
 .input-group i {
@@ -370,6 +371,7 @@ body.auth-body {
   color: #333;
   margin-bottom: 6px;
   margin-left: 4px;
+  white-space: nowrap;
 }
 .modal {
   display: none;
