@@ -60,7 +60,6 @@ body.auth-body {
   padding: 14px 16px;
   border-radius: 30px;
   border: 1px solid rgba(200, 150, 120, 0.3);
-  flex-direction: column;
 }
 
 .input-group i {
@@ -356,14 +355,13 @@ body.auth-body {
 }
 
 .required-asterisk {
-  position: static;
+  position: absolute;
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: red;
   font-size: 18px;
   font-weight: bold;
-  margin-left: 4px;
 }
 .input-label {
   display: block;
