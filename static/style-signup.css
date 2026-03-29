@@ -356,13 +356,14 @@ body.auth-body {
 }
 
 .required-asterisk {
-  position: absolute;
+  position: static;
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: red;
   font-size: 18px;
   font-weight: bold;
+  margin-left: 4px;
 }
 .input-label {
   display: block;
